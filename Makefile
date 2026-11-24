@@ -1,9 +1,13 @@
 # ---- app -----------------------------------------------------------------
 
-.PHONY: run build test test-db-up test-db-down
+.PHONY: run build migrate test test-db-up test-db-down
 
 run:
 	go run ./cmd
+
+# Migratsiyalar ilova start'ida ham avtomatik qo'llanadi; bu faqat ularni qo'llab chiqadi.
+migrate:
+	go run ./cmd -migrate
 
 build:
 	go build -o bin/server ./cmd

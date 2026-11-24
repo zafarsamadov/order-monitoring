@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"os"
 
 	"order-monitoring/api"
@@ -14,6 +15,10 @@ import (
 )
 
 func main() {
+	// -migrate: faqat migratsiyalarni qo'llab chiqadi (server ham, sync ham ishga tushmaydi).
+	migrateOnly := flag.Bool("migrate", false, "faqat migratsiyalarni qo'llash va chiqish")
+	flag.Parse()
+
 	cfg, err := config.Load()
 	if err != nil {
 		logger.Errorf("konfiguratsiya: %v", err)
@@ -29,6 +34,11 @@ func main() {
 		os.Exit(1)
 	}
 	defer store.CloseDB()
+
+	if *migrateOnly {
+		logger.Success("migratsiyalar qo'llandi")
+		return
+	}
 
 	if err := store.Sync().MarkInterrupted(ctx); err != nil {
 		logger.Errorf("sync_runs: %v", err)
