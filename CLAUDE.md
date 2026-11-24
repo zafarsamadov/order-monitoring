@@ -63,3 +63,18 @@ Kutubxonalar: gin, pgx v4 (pgxpool), godotenv, cast. Ortiqcha bog'liqlik qo'shil
 ## Holat
 - **0-bosqich** tugadi: API tahlili (endpointlar, maydonlar, bog'lanishlar) — reja faylida.
 - **1a.0**: CLAUDE.md, .gitignore, .env.example, docs/AI_NOTES.md, docs/api-samples/ (tozalangan) yaratildi.
+- **1a (kod)**: skeleton, config, migratsiya (00001: orders, packages, handovers, shelves, shelf_tiles,
+  sync_runs), `dona` klient, `syncer`, `POST /sync`, `GET /sync/status`, Makefile. Testlar o'tadi.
+  Hali qilinmagan: real stendga sync (`.env` yangi kalitlarga o'tkazilishi kerak), filtrsiz `/packages` tekshiruvi.
+
+## Buyruqlar
+- `make test-db-up && make test` — testlar (sync testlari Postgres'siz skip bo'ladi), `make test-db-down`.
+- `make run` — ilova (`.env` kerak).
+
+## Muhim detallar
+- Upsert: `storage/postgres/sync.go` `upsert()` — `ON CONFLICT ... WHERE raw_hash <> EXCLUDED.raw_hash RETURNING (xmax = 0)`.
+  Qator qaytmasa → unchanged, faqat `last_synced_at` yangilanadi.
+- Hash kanonik JSON'dan (kalitlar saralangan). Javonlarning `oldest_age_seconds`, `progress` maydonlari hash'ga
+  kirmaydi (har so'rovda o'zgaradi). Tile hash'iga ota javon kodi qo'shiladi.
+- Bo'sh satr ustunlarda NULL bo'ladi (`text()` helper) — qoidalarda "yo'q"ni `IS NULL` bilan tekshiring.
+- `NetError.Error()` stend host'ini chiqarmaydi (`url.Error` ichidagi manzil logga tushmasligi uchun).
