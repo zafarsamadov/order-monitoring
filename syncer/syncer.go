@@ -16,6 +16,7 @@ import (
 
 	"order-monitoring/logger"
 	"order-monitoring/models"
+	"order-monitoring/pkg"
 	"order-monitoring/storage"
 )
 
@@ -272,15 +273,5 @@ func (s *Syncer) pause(ctx context.Context, first *bool) error {
 		*first = false
 		return nil
 	}
-	if s.opt.RequestDelay <= 0 {
-		return nil
-	}
-	t := time.NewTimer(s.opt.RequestDelay)
-	defer t.Stop()
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case <-t.C:
-		return nil
-	}
+	return pkg.Sleep(ctx, s.opt.RequestDelay)
 }

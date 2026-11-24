@@ -10,13 +10,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"math/rand/v2"
 	"net/http"
 	"net/url"
 	"sync"
 	"time"
 
 	"order-monitoring/logger"
+	"order-monitoring/pkg"
 )
 
 const (
@@ -27,6 +27,7 @@ const (
 	defaultMaxBackoff  = 10 * time.Second
 
 	maxBodyBytes = 50 << 20
+	maxErrBody   = 200 // xato javob tanasidan logga yoziladigan qism
 )
 
 type Options struct {
@@ -138,9 +139,9 @@ func (c *Client) withRetry(ctx context.Context, path string, build func() (*http
 	var lastErr error
 	for attempt := 0; attempt <= c.opt.MaxRetries; attempt++ {
 		if attempt > 0 {
-			wait := c.backoff(attempt)
+			wait := pkg.Backoff(attempt, c.baseBackoff, c.maxBackoff)
 			logger.Warnf("%v; %d-urinish %s dan keyin", lastErr, attempt+1, wait.Round(time.Millisecond))
-			if err := sleep(ctx, wait); err != nil {
+			if err := pkg.Sleep(ctx, wait); err != nil {
 				return err
 			}
 		}
@@ -182,39 +183,10 @@ func (c *Client) send(req *http.Request, path string, out any) error {
 	}
 
 	if resp.StatusCode >= 400 {
-		return &HTTPError{Path: path, Status: resp.StatusCode, Body: snippet(body)}
+		return &HTTPError{Path: path, Status: resp.StatusCode, Body: pkg.Truncate(string(body), maxErrBody)}
 	}
 	if err := json.Unmarshal(body, out); err != nil {
 		return fmt.Errorf("%s: javob JSON emas: %w", path, err)
 	}
 	return nil
-}
-
-func (c *Client) backoff(attempt int) time.Duration {
-	d := c.baseBackoff << (attempt - 1)
-	if d <= 0 || d > c.maxBackoff {
-		d = c.maxBackoff
-	}
-	// Jitter: [d/2, d] oralig'ida tasodifiy, bir vaqtda qayta urinishlar to'qnashmasligi uchun.
-	half := d / 2
-	return half + time.Duration(rand.Int64N(int64(half)+1))
-}
-
-func sleep(ctx context.Context, d time.Duration) error {
-	t := time.NewTimer(d)
-	defer t.Stop()
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case <-t.C:
-		return nil
-	}
-}
-
-func snippet(b []byte) string {
-	const max = 200
-	if len(b) > max {
-		return string(b[:max]) + "..."
-	}
-	return string(b)
 }

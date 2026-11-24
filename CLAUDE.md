@@ -39,6 +39,7 @@ migration/up|down      SQL migratsiyalar, ilova start'da embed orqali qo'llanadi
 rules/                 har qoida alohida faylda + registry.go
 report/                summary va CSV
 handler/ api/          gin handlerlar va router
+pkg/                   umumiy yordamchilar: hash.go, time.go (Sleep, Backoff), neterr.go, strings.go, sql.go, maps.go
 web/                   bitta oddiy sahifa (go:embed): "Sinxronlash" va "Nomutanosibliklarni aniqlash"
 ```
 Kutubxonalar: gin, pgx v4 (pgxpool), godotenv, cast. Ortiqcha bog'liqlik qo'shilmaydi.
@@ -56,6 +57,8 @@ Kutubxonalar: gin, pgx v4 (pgxpool), godotenv, cast. Ortiqcha bog'liqlik qo'shil
 - `sync_runs`: holat, inserted/updated/unchanged, oxirgi offset, xato, API `total`. Bir vaqtda bitta sync (409).
 
 ## Kod uslubi
+- Umumiy yordamchi funksiyalar `pkg/` da (rider uslubi, `package pkg`, mavzu bo'yicha alohida fayllar).
+  Domen paketlarida faqat o'sha domenga xos kod qoladi (masalan `dona.isRetryable`).
 - Sodda, o'qilishi oson. Izohlar o'zbekcha, qisqa, "nega"ni tushuntiradi.
 - `docs/AI_NOTES.md` har bosqichda yangilanadi: Claude nima yozdi, foydalanuvchi nimani o'zgartirdi/tashladi,
   qayerda xato bo'ldi, ketgan vaqt.
@@ -80,7 +83,7 @@ Kutubxonalar: gin, pgx v4 (pgxpool), godotenv, cast. Ortiqcha bog'liqlik qo'shil
   Qator qaytmasa → unchanged, faqat `last_synced_at` yangilanadi.
 - Hash kanonik JSON'dan (kalitlar saralangan). Javonlarning `oldest_age_seconds`, `progress` maydonlari hash'ga
   kirmaydi (har so'rovda o'zgaradi). Tile hash'iga ota javon kodi qo'shiladi.
-- Bo'sh satr ustunlarda NULL bo'ladi (`text()` helper) — qoidalarda "yo'q"ni `IS NULL` bilan tekshiring.
+- Bo'sh satr ustunlarda NULL bo'ladi (`pkg.EmptyToNil`) — qoidalarda "yo'q"ni `IS NULL` bilan tekshiring.
 - Baza: `.env` da alohida `POSTGRES_HOST/PORT/USER/PASSWORD/DATABASE` (URL emas); DSN `config.PostgresURL()`.
   Testlar esa bitta `TEST_DATABASE_URL` oladi (Makefile'da sukut qiymati bor).
 - Stendga ulanish uchun VS Code'da macOS Local Network ruxsati kerak (aks holda `no route to host`).
