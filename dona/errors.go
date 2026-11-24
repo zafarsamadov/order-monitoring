@@ -45,6 +45,12 @@ func netKind(err error) string {
 		return "connection refused"
 	case errors.Is(err, syscall.ECONNRESET):
 		return "connection reset"
+	case errors.Is(err, syscall.EHOSTUNREACH), errors.Is(err, syscall.EHOSTDOWN):
+		return "host'ga yetib bo'lmadi"
+	case errors.Is(err, syscall.ENETUNREACH):
+		return "tarmoqqa yetib bo'lmadi"
+	case errors.Is(err, syscall.EPERM), errors.Is(err, syscall.EACCES):
+		return "ulanishga ruxsat yo'q (firewall/sandbox)"
 	case errors.Is(err, io.EOF), errors.Is(err, io.ErrUnexpectedEOF):
 		return "ulanish kutilmaganda yopildi"
 	default:

@@ -1,13 +1,21 @@
 package api
 
 import (
+	"net/http"
+
 	"order-monitoring/handler"
+	"order-monitoring/web"
 
 	"github.com/gin-gonic/gin"
 )
 
 func New(h *handler.Handler) *gin.Engine {
 	router := gin.Default()
+
+	// frontend
+	router.GET("/", h.Index)
+	router.StaticFileFS("/static/style.css", "style.css", http.FS(web.FS))
+	router.StaticFileFS("/static/app.js", "app.js", http.FS(web.FS))
 
 	{
 		sync := router.Group("/sync")

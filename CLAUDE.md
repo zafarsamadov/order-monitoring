@@ -65,7 +65,11 @@ Kutubxonalar: gin, pgx v4 (pgxpool), godotenv, cast. Ortiqcha bog'liqlik qo'shil
 - **1a.0**: CLAUDE.md, .gitignore, .env.example, docs/AI_NOTES.md, docs/api-samples/ (tozalangan) yaratildi.
 - **1a (kod)**: skeleton, config, migratsiya (00001: orders, packages, handovers, shelves, shelf_tiles,
   sync_runs), `dona` klient, `syncer`, `POST /sync`, `GET /sync/status`, Makefile. Testlar o'tadi.
-  Hali qilinmagan: real stendga sync (`.env` yangi kalitlarga o'tkazilishi kerak), filtrsiz `/packages` tekshiruvi.
+- **Frontend (sync qismi)**: `web/` (index.html, style.css, app.js, embed.go), `GET /` va `/static/*`.
+  Faqat "Sinxronlash" tugmasi; anomaliyalar va CSV keyin.
+- **Real sync** (2026-11-24): orders 638/638, packages 16/16 (filtrsiz `/packages?warehouse=` ishlaydi),
+  handovers 39/39, shelves+tiles 16. Ikkinchi sync: 0 yangi, 0 yangilangan, 709 o'zgarmagan.
+  Keyingi qadam: SQL bilan ma'lumot tahlili → qoida nomzodlari (1b).
 
 ## Buyruqlar
 - `make test-db-up && make test` — testlar (sync testlari Postgres'siz skip bo'ladi), `make test-db-down`.
@@ -79,4 +83,6 @@ Kutubxonalar: gin, pgx v4 (pgxpool), godotenv, cast. Ortiqcha bog'liqlik qo'shil
 - Bo'sh satr ustunlarda NULL bo'ladi (`text()` helper) — qoidalarda "yo'q"ni `IS NULL` bilan tekshiring.
 - Baza: `.env` da alohida `POSTGRES_HOST/PORT/USER/PASSWORD/DATABASE` (URL emas); DSN `config.PostgresURL()`.
   Testlar esa bitta `TEST_DATABASE_URL` oladi (Makefile'da sukut qiymati bor).
+- Stendga ulanish uchun VS Code'da macOS Local Network ruxsati kerak (aks holda `no route to host`).
+  `DONA_API_BASE_URL` `/api/v1` bilan tugaydi.
 - `NetError.Error()` stend host'ini chiqarmaydi (`url.Error` ichidagi manzil logga tushmasligi uchun).
