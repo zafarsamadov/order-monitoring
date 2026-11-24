@@ -23,7 +23,7 @@ func main() {
 	ctx := context.Background()
 
 	// postgres connection + migratsiyalar
-	store, err := postgres.NewPostgres(ctx, cfg.DatabaseURL)
+	store, err := postgres.NewPostgres(ctx, cfg.PostgresURL())
 	if err != nil {
 		logger.Errorf("baza: %v", err)
 		os.Exit(1)

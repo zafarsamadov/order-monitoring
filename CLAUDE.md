@@ -77,4 +77,6 @@ Kutubxonalar: gin, pgx v4 (pgxpool), godotenv, cast. Ortiqcha bog'liqlik qo'shil
 - Hash kanonik JSON'dan (kalitlar saralangan). Javonlarning `oldest_age_seconds`, `progress` maydonlari hash'ga
   kirmaydi (har so'rovda o'zgaradi). Tile hash'iga ota javon kodi qo'shiladi.
 - Bo'sh satr ustunlarda NULL bo'ladi (`text()` helper) — qoidalarda "yo'q"ni `IS NULL` bilan tekshiring.
+- Baza: `.env` da alohida `POSTGRES_HOST/PORT/USER/PASSWORD/DATABASE` (URL emas); DSN `config.PostgresURL()`.
+  Testlar esa bitta `TEST_DATABASE_URL` oladi (Makefile'da sukut qiymati bor).
 - `NetError.Error()` stend host'ini chiqarmaydi (`url.Error` ichidagi manzil logga tushmasligi uchun).

@@ -2,7 +2,10 @@ package config
 
 import (
 	"fmt"
+	"net"
+	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -18,8 +21,13 @@ type Config struct {
 	DonaWarehouseCode string
 	DonaWarehouseID   string
 
-	DatabaseURL string
-	HTTPAddr    string
+	PostgresHost     string
+	PostgresPort     int
+	PostgresUser     string
+	PostgresPassword string
+	PostgresDatabase string
+
+	HTTPAddr string
 
 	PageSize     int
 	RequestDelay time.Duration
@@ -49,7 +57,11 @@ func Load() (*Config, error) {
 		DonaPassword:      required("DONA_PASSWORD"),
 		DonaWarehouseCode: cast.ToString(getOrReturnDefaultValue("DONA_WAREHOUSE_CODE", "")),
 		DonaWarehouseID:   cast.ToString(getOrReturnDefaultValue("DONA_WAREHOUSE_ID", "")),
-		DatabaseURL:       required("DATABASE_URL"),
+		PostgresHost:      cast.ToString(getOrReturnDefaultValue("POSTGRES_HOST", "localhost")),
+		PostgresPort:      cast.ToInt(getOrReturnDefaultValue("POSTGRES_PORT", 5432)),
+		PostgresUser:      cast.ToString(getOrReturnDefaultValue("POSTGRES_USER", "postgres")),
+		PostgresPassword:  required("POSTGRES_PASSWORD"),
+		PostgresDatabase:  cast.ToString(getOrReturnDefaultValue("POSTGRES_DATABASE", "order_monitoring")),
 		HTTPAddr:          cast.ToString(getOrReturnDefaultValue("HTTP_ADDR", ":8080")),
 		PageSize:          cast.ToInt(getOrReturnDefaultValue("PAGE_SIZE", 50)),
 		RequestDelay:      time.Duration(cast.ToInt(getOrReturnDefaultValue("REQUEST_DELAY_MS", 300))) * time.Millisecond,
@@ -61,11 +73,27 @@ func Load() (*Config, error) {
 	if len(missing) > 0 {
 		return nil, fmt.Errorf("majburiy env kalit(lar) to'ldirilmagan: %s", strings.Join(missing, ", "))
 	}
+	if cfg.PostgresPort <= 0 {
+		return nil, fmt.Errorf("POSTGRES_PORT musbat son bo'lishi kerak")
+	}
 	if cfg.PageSize <= 0 || cfg.HTTPTimeout <= 0 || cfg.MaxRetries < 0 || cfg.RequestDelay < 0 {
 		return nil, fmt.Errorf("PAGE_SIZE, HTTP_TIMEOUT_SEC musbat, MAX_RETRIES va REQUEST_DELAY_MS manfiy bo'lmasligi kerak")
 	}
 
 	return cfg, nil
+}
+
+// PostgresURL alohida kalitlardan DSN yig'adi. url.URL parol ichidagi maxsus belgilarni
+// (@, :, / ...) to'g'ri kodlaydi. Natija logga chiqarilmaydi.
+func (c *Config) PostgresURL() string {
+	u := url.URL{
+		Scheme:   "postgres",
+		User:     url.UserPassword(c.PostgresUser, c.PostgresPassword),
+		Host:     net.JoinHostPort(c.PostgresHost, strconv.Itoa(c.PostgresPort)),
+		Path:     c.PostgresDatabase,
+		RawQuery: "sslmode=disable",
+	}
+	return u.String()
 }
 
 // getOrReturnDefaultValue rider'dagidek, lekin bo'sh qiymatni ham "yo'q" deb hisoblaydi:
