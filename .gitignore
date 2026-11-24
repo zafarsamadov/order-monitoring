@@ -1,0 +1,10 @@
+# sirlar
+.env
+# DevTools xom namunalari (token/parol bor) va ularning tozalangan nusxasi
+apis/
+docs/
+task.md
+
+/bin/
+*.exe
+plan.md
