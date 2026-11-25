@@ -35,10 +35,12 @@ type Service struct {
 }
 
 func NewService(store storage.StorageI, client Fetcher, syncOpt models.SyncOptions) *Service {
+	anomaly := NewAnomalyService(store.Anomalies())
+
 	return &Service{
 		sync:    NewSyncService(client, store.Sync(), syncOpt),
-		order:   NewOrderService(store.Order()),
-		anomaly: NewAnomalyService(store.Anomalies()),
+		order:   NewOrderService(store.Order(), anomaly),
+		anomaly: anomaly,
 	}
 }
 

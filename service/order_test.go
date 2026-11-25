@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -137,6 +138,18 @@ func (f fakeOrderRepo) GetHandovers(context.Context, string) ([]models.HandoverT
 	return f.handovers, nil
 }
 
+// fakeAnomalyService — GetList berilgan javobni qaytaradi (nil bo'lsa bo'sh).
+type fakeAnomalyService struct {
+	resp *models.RuleResponse
+}
+
+func (f fakeAnomalyService) GetList(context.Context, string, string) (*models.RuleResponse, error) {
+	if f.resp == nil {
+		return &models.RuleResponse{Items: []models.RuleItem{}}, nil
+	}
+	return f.resp, nil
+}
+
 func TestTimelineAssemblesOrder(t *testing.T) {
 	repo := fakeOrderRepo{
 		order: &models.OrderTimelineRow{
@@ -147,7 +160,7 @@ func TestTimelineAssemblesOrder(t *testing.T) {
 		handovers: []models.HandoverTimelineRow{{HandoverNo: "HND-1", ExpectedQty: 1, CreatedAt: at(5)}},
 	}
 
-	tl, err := NewOrderService(repo).Timeline(context.Background(), "AB123")
+	tl, err := NewOrderService(repo, fakeAnomalyService{}).Timeline(context.Background(), "AB123")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -169,7 +182,7 @@ func TestTimelineAssemblesOrder(t *testing.T) {
 func TestTimelineNoLocation(t *testing.T) {
 	repo := fakeOrderRepo{order: &models.OrderTimelineRow{ID: "o2", Code: "GRP-2"}}
 
-	tl, err := NewOrderService(repo).Timeline(context.Background(), "GRP-2")
+	tl, err := NewOrderService(repo, fakeAnomalyService{}).Timeline(context.Background(), "GRP-2")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -181,8 +194,29 @@ func TestTimelineNoLocation(t *testing.T) {
 func TestTimelineNotFound(t *testing.T) {
 	repo := fakeOrderRepo{err: storage.ErrOrderNotFound}
 
-	_, err := NewOrderService(repo).Timeline(context.Background(), "NOPE")
+	_, err := NewOrderService(repo, fakeAnomalyService{}).Timeline(context.Background(), "NOPE")
 	if !errors.Is(err, storage.ErrOrderNotFound) {
 		t.Fatalf("ErrOrderNotFound kutilgan, bor %v", err)
+	}
+}
+
+// Timeline'ga faqat shu orderning anomaliyalari tushadi.
+func TestTimelineAnomaliesOnlyForThisOrder(t *testing.T) {
+	repo := fakeOrderRepo{order: &models.OrderTimelineRow{ID: "o1", Code: "AB123"}}
+	anomaly := fakeAnomalyService{resp: &models.RuleResponse{Items: []models.RuleItem{
+		{Rule: "rule_a", Severity: "high", Items: []models.Item{
+			{OrderCode: "AB123", Reason: "a sabab"},
+			{OrderCode: "OTHER", Reason: "boshqa order"},
+		}},
+		{Rule: "rule_b", Severity: "low", Items: []models.Item{{OrderCode: "OTHER", Reason: "boshqa order"}}},
+	}}}
+
+	tl, err := NewOrderService(repo, anomaly).Timeline(context.Background(), "AB123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []models.Anomaly{{Rule: "rule_a", Severity: "high", OrderCode: "AB123", Reason: "a sabab"}}
+	if !reflect.DeepEqual(tl.Anomalies, want) {
+		t.Fatalf("faqat AB123 ning rule_a anomaliyasi kutilgan, bor %+v", tl.Anomalies)
 	}
 }

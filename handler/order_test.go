@@ -15,13 +15,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// fakeService — faqat Order() ishlatiladi.
+// fakeService — Order() va Anomaly() ishlatiladi.
 type fakeService struct {
 	service.ServiceI
-	order fakeOrderService
+	order   fakeOrderService
+	anomaly fakeAnomalyService
 }
 
-func (f fakeService) Order() service.OrderServiceI { return f.order }
+func (f fakeService) Order() service.OrderServiceI     { return f.order }
+func (f fakeService) Anomaly() service.AnomalyServiceI { return f.anomaly }
 
 type fakeOrderService struct {
 	timeline *models.Timeline

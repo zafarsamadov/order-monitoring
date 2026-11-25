@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Anomaliyalar hisoboti</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <main class="wrap">
+    <section class="card">
+      <div class="card__head">
+        <div>
+          <h2>Anomaliyalar hisoboti</h2>
+          <p class="muted">Yaratildi: {{.GeneratedAt}} · noyob orderlar: <strong>{{.Report.TotalOrders}}</strong></p>
+        </div>
+        <div>
+          <a class="btn" href="/report.csv">Hisobot CSV</a>
+          <a class="btn" href="/anomalies.csv">To'liq ro'yxat CSV</a>
+        </div>
+      </div>
+
+      <div class="rule-cards">
+        {{range .Report.Items}}
+        <div class="rule-card">
+          <div class="rule-card__head">
+            <span class="rule-card__name">{{.Rule}}</span>
+            <span class="sev sev--{{.Severity}}">{{.Severity}}</span>
+            <span class="rule-card__count">{{.Total}} ta order</span>
+          </div>
+          <p class="rule-card__desc">{{.Description}}</p>
+          {{if .Examples}}
+          <div class="rule-table">
+            <table>
+              <thead><tr><th>Order</th><th>Sabab</th></tr></thead>
+              <tbody>
+                {{range .Examples}}<tr><td>{{.OrderCode}}</td><td>{{.Reason}}</td></tr>{{end}}
+              </tbody>
+            </table>
+          </div>
+          {{else}}
+          <p class="muted small">Anomaliya topilmadi.</p>
+          {{end}}
+        </div>
+        {{end}}
+      </div>
+    </section>
+  </main>
+</body>
+</html>

@@ -35,5 +35,11 @@ func New(h *handler.Handler) *gin.Engine {
 
 		anomalies.GET("", h.Anomalies)
 	}
+
+	// hisobot
+	router.GET("/report", h.Report)
+	router.GET("/report.csv", h.ReportCSV)
+	router.GET("/anomalies.csv", h.AnomaliesCSV)
+
 	return router
 }

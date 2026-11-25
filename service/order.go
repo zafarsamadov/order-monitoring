@@ -12,11 +12,12 @@ import (
 )
 
 type orderService struct {
-	repo storage.OrderRepoI
+	repo    storage.OrderRepoI
+	anomaly AnomalyServiceI
 }
 
-func NewOrderService(repo storage.OrderRepoI) *orderService {
-	return &orderService{repo: repo}
+func NewOrderService(repo storage.OrderRepoI, anomaly AnomalyServiceI) *orderService {
+	return &orderService{repo: repo, anomaly: anomaly}
 }
 
 // Timeline order kodi (order_code, group_no yoki id) bo'yicha orderni, uning qutilari va
@@ -38,10 +39,29 @@ func (s *orderService) Timeline(ctx context.Context, code string) (*models.Timel
 		return nil, err
 	}
 
+	// Qoidalar natijasidan faqat shu orderniki. Kod ikkalasida ham order_code → group_no → id.
+	rules, err := s.anomaly.GetList(ctx, "", "")
+	if err != nil {
+		return nil, err
+	}
+	anomalies := []models.Anomaly{}
+	for _, rule := range rules.Items {
+		for _, item := range rule.Items {
+			if item.OrderCode == order.Code {
+				anomalies = append(anomalies, models.Anomaly{
+					Rule:      rule.Rule,
+					Severity:  rule.Severity,
+					OrderCode: item.OrderCode,
+					Reason:    item.Reason,
+				})
+			}
+		}
+	}
+
 	return &models.Timeline{
 		Order:     timelineOrder(order, packages),
 		Events:    buildEvents(order, packages, handovers),
-		Anomalies: []models.Anomaly{}, // qoidalar ulangach to'ldiriladi
+		Anomalies: anomalies,
 	}, nil
 }
 

@@ -226,12 +226,27 @@ Real ma'lumotda: javon 0 — 3 ta orderdan 3 quti, javon 1 — 3 ta orderdan 3 q
 
 | Endpoint | Ma'nosi |
 |---|---|
-| `POST /sync` | sync'ni ishga tushiradi; tugaguncha kutadi va natijani qaytaradi (409 — sync allaqachon ketyapti) |
+| `POST /sync` | sync'ni ishga tushiradi, tugaguncha kutadi va natijani qaytaradi (`inserted/updated/unchanged`, har obyekt bo'yicha). 409 — sync allaqachon ketyapti; 502 — stend xatosi (qisman natija bilan) |
 | `GET /sync/status` | oxirgi sync natijasi va hozir sync ketyaptimi |
-| `GET /anomalies?rule=&severity=` | anomaliyalar ro'yxati; ikkala filtr ixtiyoriy, `severity`: `low`, `medium`, `high` |
-| `GET /orders/{code}/timeline` | orderning hodisalar tarixi; `code` o'rniga `order_code`, `group_no` yoki `id` berish mumkin; topilmasa 404 |
+| `GET /anomalies?rule=&severity=` | anomaliyalar; ikkala filtr ixtiyoriy. Noma'lum `rule` yoki `severity` (`low`/`medium`/`high` emas) — 400. Mavjud rule + boshqa severity — 200, bo'sh ro'yxat |
+| `GET /orders/{code}/timeline` | order, qutilari, hodisalar vaqt bo'yicha va shu orderning anomaliyalari. `code` — `order_code`, `group_no` yoki `id`; topilmasa 404 |
+| `GET /report` | hisobot sahifasi: har qoida uchun noyob orderlar soni, 3 ta misol (3 ta turli order) va izoh |
+| `GET /report.csv` | o'sha hisobot CSV'da, har qoida bitta qator: `rule,severity,orders_count,example_1,example_2,example_3,comment` |
+| `GET /anomalies.csv` | to'liq ro'yxat: `rule,severity,order_code,reason` |
 
-> TODO: hisobot (HTML/CSV).
+- `/anomalies` javobida har qoida uchun `total` — **noyob** orderlar soni (bitta orderda ikki handover bo'lsa ham bir marta),
+  `total_orders` — ko'rsatilgan qoidalar bo'yicha noyob orderlar (bitta order ikki qoidaga tushsa ham bir marta).
+- Hisobot, CSV, `/anomalies` va timeline bitta manbadan (`service/anomaly.go` `GetList`) oladi — sonlar har joyda bir xil.
+- Hech bir endpoint stendga murojaat qilmaydi, faqat `POST /sync` (u ham faqat login + GET). Bazaga faqat sync yozadi.
+
+Misol:
+```bash
+curl -s 'localhost:8080/anomalies?rule=dispatched_package_on_shelf'
+# {"total_orders":1,"items":[{"rule":"dispatched_package_on_shelf","severity":"medium","total":1,
+#   "items":[{"order_code":"HC1794401226GR","reason":"status=DISPATCHED, javonda qolgan qutilar: PKG-10192 0"}], ...}]}
+curl -s 'localhost:8080/anomalies?rule=nope'     # 400 {"error":"noma'lum rule \"nope\"; mavjudlari: ..."}
+curl -s 'localhost:8080/orders/NOPE/timeline'    # 404 {"error":"order topilmadi"}
+```
 
 ---
 
@@ -252,7 +267,8 @@ Har bir test o'z Postgres sxemasida ishlaydi va oxirida o'sha sxemani o'chiradi.
 |---|---|
 | Stend klienti | 500 → retry; 429 → retry, keyin to'xtash; 4xx retry yo'q; 401 → qayta login; connection refused (host yashirin); `Retry-After`; buzilgan JSON; faqat GET + login yuboriladi; ochiq metodlar faqat `Login`/`Get` |
 | Sync | pagination + 500 dan keyin retry + takroriy sync dublikatsiz + o'zgargan yozuv yangilanadi; server limit'ni kesadi; o'rtada uzilish va davom etish; parallel sync rad etiladi |
-| Timeline | hodisalar tartibi, bo'sh vaqtlar, 404, handler javoblari |
+| Timeline | hodisalar tartibi, bo'sh vaqtlar, 404, handler javoblari, faqat shu orderning anomaliyalari |
+| Anomaliyalar API va hisobot | noyob orderlar soni, 3 ta turli misol, noma'lum rule/severity → 400, mavjud rule + boshqa severity → bo'sh, `/report.csv` qatorlari |
 
 > TODO: qoidalar testlari.
 
