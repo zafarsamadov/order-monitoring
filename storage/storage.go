@@ -36,4 +36,5 @@ type AnomaliesRepoI interface {
 	IssuedOrderPackageReturnedRule(ctx context.Context) (*models.RuleItem, error)
 	ConflictingPackageStatusesRule(ctx context.Context) (*models.RuleItem, error)
 	ReturnedToSellerInWarehouseRule(ctx context.Context) (*models.RuleItem, error)
+	PackageOnUnknownShelfRule(ctx context.Context) (*models.RuleItem, error)
 }
