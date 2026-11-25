@@ -6,6 +6,7 @@ package anomalies
 const (
 	severityHigh   = "high"
 	severityMedium = "medium"
+	severityLow    = "low"
 )
 
 // Bazadagi status qiymatlari (migration/up/00001.up.sql dagi izohlarga qarang).
@@ -14,4 +15,5 @@ const (
 	returnedToSellers = "RETURNED_TO_SELLERS"
 	readyToShip       = "READY_TO_SHIP"
 	dispatched        = "DISPATCHED"
+	received          = "RECEIVED"
 )

@@ -39,4 +39,6 @@ type AnomaliesRepoI interface {
 	PackageOnUnknownShelfRule(ctx context.Context) (*models.RuleItem, error)
 	DispatchedPackageOnShelfRule(ctx context.Context) (*models.RuleItem, error)
 	HandoverReceivedBeforeCreatedRule(ctx context.Context) (*models.RuleItem, error)
+	HandoverReceivedIncompleteRule(ctx context.Context) (*models.RuleItem, error)
+	OrderItemCountMismatchRule(ctx context.Context) (*models.RuleItem, error)
 }

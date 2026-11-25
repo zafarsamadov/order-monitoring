@@ -57,6 +57,16 @@ func (a *anomalyService) GetList(ctx context.Context, rule, severity string) (*m
 		return nil, err
 	}
 
+	handoverReceivedIncomplete, err := a.repo.HandoverReceivedIncompleteRule(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	orderItemCountMismatch, err := a.repo.OrderItemCountMismatchRule(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	for _, item := range []*models.RuleItem{
 		issuedOrderInWarehouse,
 		issuedOrderPackageReturned,
@@ -65,6 +75,8 @@ func (a *anomalyService) GetList(ctx context.Context, rule, severity string) (*m
 		packageOnUnknownShelf,
 		dispatchedPackageOnShelf,
 		handoverReceivedBeforeCreated,
+		handoverReceivedIncomplete,
+		orderItemCountMismatch,
 	} {
 		if rule != "" && item.Rule != rule {
 			continue

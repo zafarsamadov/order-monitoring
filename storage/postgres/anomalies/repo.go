@@ -12,6 +12,8 @@ type Repo struct {
 	*PackageOnUnknownShelf
 	*DispatchedPackageOnShelf
 	*HandoverReceivedBeforeCreated
+	*HandoverReceivedIncomplete
+	*OrderItemCountMismatch
 }
 
 func NewRepo(db *pgxpool.Pool) *Repo {
@@ -23,5 +25,7 @@ func NewRepo(db *pgxpool.Pool) *Repo {
 		PackageOnUnknownShelf:         NewPackageOnUnknownShelfRepo(db),
 		DispatchedPackageOnShelf:      NewDispatchedPackageOnShelfRepo(db),
 		HandoverReceivedBeforeCreated: NewHandoverReceivedBeforeCreatedRepo(db),
+		HandoverReceivedIncomplete:    NewHandoverReceivedIncompleteRepo(db),
+		OrderItemCountMismatch:        NewOrderItemCountMismatchRepo(db),
 	}
 }
