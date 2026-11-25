@@ -212,7 +212,13 @@ avtomatik "tiqilib qolgan" bo'lib chiqadi. 5 tasida `transit_since` umuman yo'q.
 
 ### 3. G'alati, lekin normal
 
-> TODO
+**Bitta javonda bir nechta orderning qutilari**
+*Nega g'alati ko'rinadi:* "bir javon — bir order" deb kutish mumkin.
+*Nega normal:* javon — saralash joyi, order uchun ajratilgan joy emas. Har bir quti o'z `shelf_code` iga ega, va
+javonning `box_count` i shu qutilar soniga teng bo'lsa, ma'lumot to'g'ri.
+Real ma'lumotda: javon 0 — 3 ta orderdan 3 quti, javon 1 — 3 ta orderdan 3 quti, RET-01 — 6 ta orderdan 6 quti.
+
+> TODO: qolgan normal holatlar.
 
 ---
 
