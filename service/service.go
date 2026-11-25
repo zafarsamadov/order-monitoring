@@ -18,6 +18,7 @@ type SyncServiceI interface {
 	Run(ctx context.Context) (*models.SyncRun, error)
 	Running() bool
 	LastRun(ctx context.Context) (*models.SyncRun, error)
+	LastSuccess(ctx context.Context) (*models.SyncRun, error)
 }
 
 type OrderServiceI interface {

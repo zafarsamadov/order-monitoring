@@ -39,7 +39,12 @@ func NewSyncService(client Fetcher, store storage.SyncRepoI, opt models.SyncOpti
 
 // LastRun oxirgi sync natijasi (sync_runs). Faqat o'qiydi.
 func (s *syncService) LastRun(ctx context.Context) (*models.SyncRun, error) {
-	return s.store.LastRun(ctx)
+	return s.store.LastRun(ctx, "")
+}
+
+// LastSuccess oxirgi muvaffaqiyatli sync — oxirgisi xato bo'lsa ham bazadagi ma'lumot qaysi sync'dan ekanini ko'rsatadi.
+func (s *syncService) LastSuccess(ctx context.Context) (*models.SyncRun, error) {
+	return s.store.LastRun(ctx, models.SyncSuccess)
 }
 
 // Running hozir sync ketayotganini bildiradi.

@@ -28,7 +28,7 @@ type SyncRepoI interface {
 	StartRun(ctx context.Context) (*models.SyncRun, error)
 	SavePage(ctx context.Context, run *models.SyncRun, records []models.Record) (models.UpsertStats, error)
 	FinishRun(ctx context.Context, run *models.SyncRun) error
-	LastRun(ctx context.Context) (*models.SyncRun, error)
+	LastRun(ctx context.Context, status string) (*models.SyncRun, error)
 }
 
 type AnomaliesRepoI interface {

@@ -28,12 +28,24 @@ func (h *Handler) Sync(c *gin.Context) {
 	}
 }
 
-// SyncStatus GET /sync/status — oxirgi sync natijasi va hozir ketayotgani. Faqat o'qiydi.
+// SyncStatus GET /sync/status — oxirgi sync, oxirgi muvaffaqiyatli sync va hozir ketayotgani. Faqat o'qiydi.
+// Stend o'chiq bo'lsa oxirgi sync xato bo'ladi, lekin bazadagi ma'lumot last_success dan.
 func (h *Handler) SyncStatus(c *gin.Context) {
 	run, err := h.service.Sync().LastRun(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"running": h.service.Sync().Running(), "last_run": run})
+
+	success, err := h.service.Sync().LastSuccess(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"running":      h.service.Sync().Running(),
+		"last_run":     run,
+		"last_success": success,
+	})
 }

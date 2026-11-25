@@ -236,7 +236,7 @@ func TestRepeatedSync(t *testing.T) {
 	}
 
 	// sync_runs'da oxirgi run saqlangan.
-	last, err := store.Sync().LastRun(ctx)
+	last, err := store.Sync().LastRun(ctx, "")
 	if err != nil || last == nil || last.Status != models.SyncSuccess || last.Updated != 1 {
 		t.Fatalf("LastRun: %+v, %v", last, err)
 	}
@@ -306,7 +306,7 @@ func TestSyncFailsMidwayThenResumes(t *testing.T) {
 	if got := countRows(t, store, "orders"); got != 3 {
 		t.Fatalf("1-sahifadagi 3 order saqlanishi kerak edi, bor %d", got)
 	}
-	last, err := store.Sync().LastRun(ctx)
+	last, err := store.Sync().LastRun(ctx, "")
 	if err != nil || last.Status != models.SyncFailed || last.Error == "" {
 		t.Fatalf("sync_runs'da failed holat kutilgan, bor %+v, %v", last, err)
 	}

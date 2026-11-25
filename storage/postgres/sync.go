@@ -123,7 +123,8 @@ func (r *syncRepo) FinishRun(ctx context.Context, run *models.SyncRun) error {
 	return saveRun(ctx, r.db, run)
 }
 
-func (r *syncRepo) LastRun(ctx context.Context) (*models.SyncRun, error) {
+// LastRun oxirgi sync run. status bo'sh bo'lmasa, faqat shu holatdagilar orasidan (masalan "success").
+func (r *syncRepo) LastRun(ctx context.Context, status string) (*models.SyncRun, error) {
 	var (
 		run      models.SyncRun
 		entities []byte
@@ -143,11 +144,12 @@ func (r *syncRepo) LastRun(ctx context.Context) (*models.SyncRun, error) {
 			entities,
 			error
 		FROM sync_runs
+		WHERE $1 = '' OR status = $1
 		ORDER BY id DESC
 		LIMIT 1
 	`
 
-	err := r.db.QueryRow(ctx, query).Scan(
+	err := r.db.QueryRow(ctx, query, status).Scan(
 		&run.ID,
 		&run.Status,
 		&run.StartedAt,

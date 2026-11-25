@@ -271,7 +271,7 @@ ba'zilari qoidalar testlarida "normal" qator sifatida turibdi — qoida ularni x
 | Endpoint | Ma'nosi |
 |---|---|
 | `POST /sync` | sync'ni ishga tushiradi, tugaguncha kutadi va natijani qaytaradi (`inserted/updated/unchanged`, har obyekt bo'yicha). 409 — sync allaqachon ketyapti; 502 — stend xatosi (qisman natija bilan) |
-| `GET /sync/status` | oxirgi sync natijasi va hozir sync ketyaptimi |
+| `GET /sync/status` | oxirgi sync (`last_run`), oxirgi muvaffaqiyatli sync (`last_success`) va hozir sync ketyaptimi. Stend o'chiq bo'lsa faqat sync ishlamaydi — anomaliyalar, timeline va hisobot bazadagi ma'lumot bilan ishlayveradi |
 | `GET /anomalies?rule=&severity=` | anomaliyalar; ikkala filtr ixtiyoriy. Noma'lum `rule` yoki `severity` (`low`/`medium`/`high` emas) — 400. Mavjud rule + boshqa severity — 200, bo'sh ro'yxat |
 | `GET /orders/{code}/timeline` | order, qutilari, hodisalar vaqt bo'yicha va shu orderning anomaliyalari. `code` — `order_code`, `group_no` yoki `id`; topilmasa 404 |
 | `GET /report` | hisobot sahifasi: har qoida uchun noyob orderlar soni, 3 ta misol (3 ta turli order) va izoh |

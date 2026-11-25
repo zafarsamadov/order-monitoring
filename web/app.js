@@ -106,7 +106,7 @@
     } else if (!run) {
       setBadge("idle", "Hali sync qilinmagan");
     } else if (run.status === "failed") {
-      setBadge("failed", "Oxirgi sync xato bilan tugagan");
+      setBadge("failed", "Oxirgi sync bo'lmadi");
     } else {
       setBadge("ok", "Tayyor");
     }
@@ -123,9 +123,15 @@
       setBusy(data.running || requestInFlight);
       // Shu sahifadagi so'rov natijasini kutayotganda, oraliq holat bilan ustidan yozmaymiz.
       if (!requestInFlight) {
-        renderRun(data.last_run);
-        if (data.last_run && data.last_run.status === "failed" && !data.running) {
-          showAlert("error", data.last_run.error || "Sync xato bilan tugadi");
+        const failed = data.last_run && data.last_run.status === "failed" && !data.running;
+        if (failed) {
+          // Oxirgi sync bo'lmagan, lekin bazadagi ma'lumot joyida: oxirgi muvaffaqiyatli sync'ni ko'rsatamiz.
+          renderRun(data.last_success);
+          showAlert("warn", `Oxirgi sinxronlash bo'lmadi: ${data.last_run.error || "noma'lum xato"}. ` +
+            "Bazadagi ma'lumotlar saqlanib qolgan — quyida oxirgi muvaffaqiyatli sync; " +
+            "anomaliyalar va hisobot shu ma'lumot bo'yicha ishlaydi.");
+        } else {
+          renderRun(data.last_run);
         }
       }
       schedulePoll(data.running);
