@@ -73,6 +73,7 @@ Kutubxonalar: gin, pgx v4 (pgxpool), godotenv, cast. Ortiqcha bog'liqlik qo'shil
 - **Real sync** (2026-11-24): orders 638/638, packages 16/16 (filtrsiz `/packages?warehouse=` ishlaydi),
   handovers 39/39, shelves+tiles 16. Ikkinchi sync: 0 yangi, 0 yangilangan, 709 o'zgarmagan.
   Keyingi qadam: SQL bilan ma'lumot tahlili → qoida nomzodlari (1b).
+- `/packages`: `warehouse=WH-TAS-01` bilan 16 ta, parametrsiz 641 ta (sync #4). Qaysi biri to'g'ri — ochiq savol.
 
 ## Buyruqlar
 - `make test-db-up && make test` — testlar (sync testlari Postgres'siz skip bo'ladi), `make test-db-down`.
@@ -88,4 +89,6 @@ Kutubxonalar: gin, pgx v4 (pgxpool), godotenv, cast. Ortiqcha bog'liqlik qo'shil
   Testlar esa bitta `TEST_DATABASE_URL` oladi (Makefile'da sukut qiymati bor).
 - Stendga ulanish uchun VS Code'da macOS Local Network ruxsati kerak (aks holda `no route to host`).
   `DONA_API_BASE_URL` `/api/v1` bilan tugaydi.
+- Migratsiya `pg_advisory_lock` ostida: parallel start/testlarda to'qnashmaydi.
+- Store repolari konstruktorda yaratiladi (lazy init parallel so'rovlarda data race berardi).
 - `NetError.Error()` stend host'ini chiqarmaydi (`url.Error` ichidagi manzil logga tushmasligi uchun).

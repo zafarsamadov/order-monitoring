@@ -6,13 +6,16 @@ import (
 
 	"order-monitoring/migration"
 	"order-monitoring/storage"
+	rules "order-monitoring/storage/postgres/anomalies"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 type Store struct {
-	db   *pgxpool.Pool
-	sync storage.SyncRepoI
+	db        *pgxpool.Pool
+	sync      storage.SyncRepoI
+	order     storage.OrderRepoI
+	anomalies storage.AnomaliesRepoI
 }
 
 // NewPostgres bazaga ulanadi va migratsiyalarni qo'llaydi.
@@ -28,7 +31,13 @@ func NewPostgres(ctx context.Context, databaseURL string) (*Store, error) {
 		return nil, fmt.Errorf("migratsiya: %w", err)
 	}
 
-	return &Store{db: pool}, nil
+	// Repolar shu yerda yaratiladi: lazy init parallel so'rovlarda data race berardi.
+	return &Store{
+		db:        pool,
+		sync:      NewSyncRepo(pool),
+		order:     NewOrderRepo(pool),
+		anomalies: rules.NewIssuedOrderInWarehouseRepo(pool),
+	}, nil
 }
 
 func (s *Store) CloseDB() {
@@ -41,9 +50,13 @@ func (s *Store) Pool() *pgxpool.Pool {
 }
 
 func (s *Store) Sync() storage.SyncRepoI {
-	if s.sync == nil {
-		s.sync = NewSyncRepo(s.db)
-	}
-
 	return s.sync
+}
+
+func (s *Store) Order() storage.OrderRepoI {
+	return s.order
+}
+
+func (s *Store) Anomalies() storage.AnomaliesRepoI {
+	return s.anomalies
 }

@@ -17,10 +17,27 @@ import (
 //go:embed up/*.sql
 var upFS embed.FS
 
+// migrationLockID — pg_advisory_lock kaliti (ixtiyoriy, loyiha uchun o'zgarmas son).
+const migrationLockID = 7_310_001
+
 // Up hali qo'llanmagan up/*.sql fayllarni tartib bilan qo'llaydi.
 // rider-backend Makefile'idagi mantiq, faqat ilova start'ida Go ichida ishlaydi.
 func Up(ctx context.Context, db *pgxpool.Pool) error {
-	if _, err := db.Exec(ctx, `CREATE TABLE IF NOT EXISTS schema_migrations (
+	// Bir vaqtda bir nechta jarayon (ilova nusxalari, parallel testlar) migratsiya qilsa,
+	// CREATE TABLE to'qnashadi. Advisory lock ularni navbatga qo'yadi. Lock ulanishga bog'liq,
+	// shuning uchun hammasi bitta ulanishda bajariladi.
+	conn, err := db.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	if _, err := conn.Exec(ctx, `SELECT pg_advisory_lock($1)`, migrationLockID); err != nil {
+		return fmt.Errorf("migratsiya lock: %w", err)
+	}
+	defer conn.Exec(context.WithoutCancel(ctx), `SELECT pg_advisory_unlock($1)`, migrationLockID) //nolint:errcheck
+
+	if _, err := conn.Exec(ctx, `CREATE TABLE IF NOT EXISTS schema_migrations (
 		version    int PRIMARY KEY,
 		applied_at timestamptz NOT NULL DEFAULT now()
 	)`); err != nil {
@@ -44,7 +61,7 @@ func Up(ctx context.Context, db *pgxpool.Pool) error {
 		}
 
 		var applied bool
-		if err := db.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM schema_migrations WHERE version = $1)`, version).Scan(&applied); err != nil {
+		if err := conn.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM schema_migrations WHERE version = $1)`, version).Scan(&applied); err != nil {
 			return err
 		}
 		if applied {
@@ -57,7 +74,7 @@ func Up(ctx context.Context, db *pgxpool.Pool) error {
 		}
 
 		// Migratsiya va uning qaydi bitta tranzaksiyada: yarim qo'llangan holat qolmaydi.
-		tx, err := db.Begin(ctx)
+		tx, err := conn.Begin(ctx)
 		if err != nil {
 			return err
 		}

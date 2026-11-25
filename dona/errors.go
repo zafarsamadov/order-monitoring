@@ -27,6 +27,7 @@ type NetError struct {
 	Err  error
 }
 
+
 func (e *NetError) Error() string {
 	return fmt.Sprintf("%s: tarmoq xatosi (%s)", e.Path, pkg.NetErrorKind(e.Err))
 }

@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"order-monitoring/logger"
+	"order-monitoring/models"
 	"order-monitoring/pkg"
 )
 
@@ -30,18 +31,8 @@ const (
 	maxErrBody   = 200 // xato javob tanasidan logga yoziladigan qism
 )
 
-type Options struct {
-	BaseURL       string // masalan http://host:port/api/v1
-	Email         string
-	Password      string
-	WarehouseCode string // X-Warehouse-Code header, bo'sh bo'lsa yuborilmaydi
-	WarehouseID   string // X-Warehouse-Id header, bo'sh bo'lsa yuborilmaydi
-	Timeout       time.Duration
-	MaxRetries    int
-}
-
 type Client struct {
-	opt  Options
+	opt  models.DonaOptions
 	http *http.Client
 
 	mu    sync.Mutex
@@ -51,7 +42,7 @@ type Client struct {
 	maxBackoff  time.Duration
 }
 
-func New(opt Options) *Client {
+func New(opt models.DonaOptions) *Client {
 	return &Client{
 		opt:         opt,
 		http:        &http.Client{Timeout: opt.Timeout},

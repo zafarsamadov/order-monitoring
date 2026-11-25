@@ -171,4 +171,118 @@
 
   btn.addEventListener("click", startSync);
   loadStatus();
+
+  // ---- Nomutanosibliklar kartasi --------------------------------------------
+  // Sync qismidan mustaqil. GET /anomalies bir marta chaqiriladi; checkbox va severity
+  // filtri natijani qayta so'ramasdan, sahifaning o'zida ko'rsatadi/yashiradi.
+
+  const EXAMPLES_PER_RULE = 3;
+
+  const anomalyBtn = $("anomaly-btn");
+  const anomalyLabel = anomalyBtn.querySelector(".btn__label");
+  const anomalyAlert = $("anomaly-alert");
+  const anomalyResult = $("anomaly-result");
+  const anomalySeverity = $("anomaly-severity");
+
+  let ruleItems = [];            // oxirgi javobdagi qoidalar
+  const hiddenRules = new Set(); // checkbox'i olib tashlangan qoidalar
+
+  function renderRuleChecks() {
+    const box = $("anomaly-rules");
+    box.replaceChildren(...ruleItems.map((item) => {
+      const label = document.createElement("label");
+      label.className = "rule-check";
+
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.checked = !hiddenRules.has(item.rule);
+      input.addEventListener("change", () => {
+        if (input.checked) hiddenRules.delete(item.rule);
+        else hiddenRules.add(item.rule);
+        renderRuleCards();
+      });
+
+      const name = document.createElement("span");
+      name.textContent = item.rule;
+      const count = document.createElement("span");
+      count.className = "count";
+      count.textContent = `(${item.total})`;
+
+      label.append(input, name, count);
+      return label;
+    }));
+  }
+
+  function renderRuleCards() {
+    const severity = anomalySeverity.value;
+    const visible = ruleItems.filter((item) =>
+      !hiddenRules.has(item.rule) && (!severity || item.severity === severity));
+
+    const totalOrders = visible.reduce((sum, item) => sum + item.total, 0);
+    $("anomaly-summary").textContent =
+      `Ko'rsatilgan qoidalar: ${visible.length} / ${ruleItems.length} · buyurtmalar: ${totalOrders}`;
+
+    $("anomaly-cards").replaceChildren(...visible.map((item) => {
+      const card = document.createElement("div");
+      card.className = "rule-card";
+
+      const head = document.createElement("div");
+      head.className = "rule-card__head";
+      const name = document.createElement("span");
+      name.className = "rule-card__name";
+      name.textContent = item.rule;
+      const sev = document.createElement("span");
+      sev.className = `sev sev--${item.severity}`;
+      sev.textContent = item.severity;
+      const count = document.createElement("span");
+      count.className = "rule-card__count";
+      count.textContent = `${item.total} ta buyurtma`;
+      head.append(name, sev, count);
+
+      const desc = document.createElement("p");
+      desc.className = "rule-card__desc";
+      desc.textContent = item.description;
+
+      const list = document.createElement("ul");
+      for (const ex of (item.items || []).slice(0, EXAMPLES_PER_RULE)) {
+        const li = document.createElement("li");
+        const code = document.createElement("code");
+        code.textContent = ex.order_code;
+        li.append(code, document.createTextNode(` — ${ex.reason}`));
+        list.append(li);
+      }
+
+      card.append(head, desc, list);
+      return card;
+    }));
+  }
+
+  async function loadAnomalies() {
+    anomalyAlert.hidden = true;
+    anomalyBtn.disabled = true;
+    anomalyBtn.classList.add("is-loading");
+    anomalyLabel.textContent = "Aniqlanmoqda…";
+
+    try {
+      const res = await fetch("/anomalies");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+
+      ruleItems = data.items || [];
+      renderRuleChecks();
+      renderRuleCards();
+      $("anomaly-empty").hidden = true;
+      anomalyResult.hidden = false;
+    } catch (err) {
+      anomalyAlert.textContent = `Anomaliyalarni olib bo'lmadi: ${err.message}`;
+      anomalyAlert.hidden = false;
+    } finally {
+      anomalyBtn.disabled = false;
+      anomalyBtn.classList.remove("is-loading");
+      anomalyLabel.textContent = "Nomutanosibliklarni aniqlash";
+    }
+  }
+
+  anomalyBtn.addEventListener("click", loadAnomalies);
+  anomalySeverity.addEventListener("change", renderRuleCards);
 })();

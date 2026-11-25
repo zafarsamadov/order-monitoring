@@ -1,4 +1,4 @@
-package syncer
+package service
 
 import (
 	"context"
@@ -145,12 +145,12 @@ func makeOrders(n int) []map[string]any {
 	return out
 }
 
-func newTestSyncer(t *testing.T, f *fakeDona, store *postgres.Store) *Syncer {
+func newTestSyncer(t *testing.T, f *fakeDona, store *postgres.Store) *syncService {
 	t.Helper()
 	srv := httptest.NewServer(f)
 	t.Cleanup(srv.Close)
-	client := dona.New(dona.Options{BaseURL: srv.URL, Email: "e", Password: "p", Timeout: 5 * time.Second, MaxRetries: 3})
-	return New(client, store.Sync(), Options{PageSize: 3})
+	client := dona.New(models.DonaOptions{BaseURL: srv.URL, Email: "e", Password: "p", Timeout: 5 * time.Second, MaxRetries: 3})
+	return NewSyncService(client, store.Sync(), models.SyncOptions{PageSize: 3})
 }
 
 func countRows(t *testing.T, store *postgres.Store, table string) int {

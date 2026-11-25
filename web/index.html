@@ -76,6 +76,37 @@
 
       <p id="sync-empty" class="empty" hidden>Hali sync qilinmagan. Boshlash uchun "Sinxronlash" tugmasini bosing.</p>
     </section>
+
+    <section class="card">
+      <div class="card__head">
+        <div>
+          <h2>Nomutanosibliklar</h2>
+          <p class="muted">Bazadagi ma'lumotga barcha qoidalarni qo'llaydi. Faqat o'qiydi, stendga so'rov yubormaydi.</p>
+        </div>
+        <button id="anomaly-btn" class="btn" type="button">
+          <span class="spinner" aria-hidden="true"></span>
+          <span class="btn__label">Nomutanosibliklarni aniqlash</span>
+        </button>
+      </div>
+
+      <div id="anomaly-alert" class="alert alert--error" hidden></div>
+
+      <div id="anomaly-result" hidden>
+        <div class="anomaly-filters">
+          <div id="anomaly-rules" class="rule-checks"></div>
+          <select id="anomaly-severity" class="field" aria-label="Severity">
+            <option value="">Barcha severity</option>
+            <option value="high">high</option>
+            <option value="medium">medium</option>
+            <option value="low">low</option>
+          </select>
+        </div>
+        <p id="anomaly-summary" class="muted small"></p>
+        <div id="anomaly-cards" class="rule-cards"></div>
+      </div>
+
+      <p id="anomaly-empty" class="empty">Natijani ko'rish uchun "Nomutanosibliklarni aniqlash" tugmasini bosing.</p>
+    </section>
   </main>
 
   <script src="/static/app.js"></script>

@@ -1,6 +1,10 @@
 package models
 
-import "time"
+import (
+	"encoding/json"
+	"net/url"
+	"time"
+)
 
 // Record — bitta API yozuvining bazaga upsert qilishga tayyor ko'rinishi.
 // Table va Cols kod ichidagi konstantalardan keladi, foydalanuvchi kiritmaydi.
@@ -12,6 +16,24 @@ type Record struct {
 	Vals   []any
 	Raw    []byte // kanonik JSON
 	Hash   string // Raw hash'i: o'zgarmasa, yozuv "unchanged" hisoblanadi
+}
+
+// UpsertResult — bitta yozuv upsert natijasi.
+type UpsertResult int
+
+const (
+	UpsertUnchanged UpsertResult = iota // raw_hash o'zgarmagan
+	UpsertInserted                      // yangi yozuv
+	UpsertUpdated                       // raw_hash o'zgargan
+)
+
+// PagedEntity — stenddagi limit/offset bilan sahifalanadigan ro'yxat va uni Record'ga o'girish.
+type PagedEntity struct {
+	Name     string
+	Path     string
+	ItemsKey string // javobdagi massiv kaliti
+	Query    url.Values
+	ToRecord func(json.RawMessage) (Record, error)
 }
 
 type UpsertStats struct {

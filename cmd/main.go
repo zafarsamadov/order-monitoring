@@ -10,8 +10,9 @@ import (
 	"order-monitoring/dona"
 	"order-monitoring/handler"
 	"order-monitoring/logger"
+	"order-monitoring/models"
+	"order-monitoring/service"
 	"order-monitoring/storage/postgres"
-	"order-monitoring/syncer"
 )
 
 func main() {
@@ -45,7 +46,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	client := dona.New(dona.Options{
+	client := dona.New(models.DonaOptions{
 		BaseURL:       cfg.DonaBaseURL,
 		Email:         cfg.DonaEmail,
 		Password:      cfg.DonaPassword,
@@ -54,7 +55,7 @@ func main() {
 		Timeout:       cfg.HTTPTimeout,
 		MaxRetries:    cfg.MaxRetries,
 	})
-	sy := syncer.New(client, store.Sync(), syncer.Options{
+	svc := service.NewService(store, client, models.SyncOptions{
 		PageSize:     cfg.PageSize,
 		RequestDelay: cfg.RequestDelay,
 		Warehouse:    cfg.DonaWarehouseCode,
@@ -63,11 +64,11 @@ func main() {
 	if cfg.SyncOnStart {
 		go func() {
 			// Xato Run ichida logga yoziladi va sync_runs'da saqlanadi.
-			_, _ = sy.Run(ctx)
+			_, _ = svc.Sync().Run(ctx)
 		}()
 	}
 
-	router := api.New(handler.NewHandler(store, sy))
+	router := api.New(handler.NewHandler(svc))
 
 	logger.Infof("server %s da ishga tushmoqda", cfg.HTTPAddr)
 	if err := router.Run(cfg.HTTPAddr); err != nil {

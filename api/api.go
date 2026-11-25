@@ -24,5 +24,16 @@ func New(h *handler.Handler) *gin.Engine {
 		sync.GET("/status", h.SyncStatus)
 	}
 
+	{
+		order := router.Group("/orders")
+
+		order.GET("/:code/timeline", h.GetOrderTimeline)
+	}
+
+	{
+		rules := router.Group("/anomalies")
+
+		rules.GET("", h.Anomalies)
+	}
 	return router
 }

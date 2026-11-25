@@ -1,4 +1,4 @@
-package syncer
+package service
 
 import (
 	"encoding/json"

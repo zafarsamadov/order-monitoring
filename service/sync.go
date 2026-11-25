@@ -1,6 +1,4 @@
-// Package syncer stenddan ma'lumotni sahifalab tortib, bazaga upsert qiladi.
-// (`sync` nomi standart kutubxona bilan to'qnashmasligi uchun `syncer`.)
-package syncer
+package service
 
 import (
 	"context"
@@ -27,53 +25,44 @@ type Fetcher interface {
 	Get(ctx context.Context, path string, query url.Values, out any) error
 }
 
-type Options struct {
-	PageSize     int
-	RequestDelay time.Duration
-	Warehouse    string // /packages va /shelves uchun ?warehouse=
-}
-
-type Syncer struct {
+// syncService stenddan ma'lumotni sahifalab tortib, bazaga upsert qiladi.
+type syncService struct {
 	client  Fetcher
 	store   storage.SyncRepoI
-	opt     Options
+	opt     models.SyncOptions
 	running atomic.Bool
 }
 
-func New(client Fetcher, store storage.SyncRepoI, opt Options) *Syncer {
-	return &Syncer{client: client, store: store, opt: opt}
+func NewSyncService(client Fetcher, store storage.SyncRepoI, opt models.SyncOptions) *syncService {
+	return &syncService{client: client, store: store, opt: opt}
+}
+
+// LastRun oxirgi sync natijasi (sync_runs). Faqat o'qiydi.
+func (s *syncService) LastRun(ctx context.Context) (*models.SyncRun, error) {
+	return s.store.LastRun(ctx)
 }
 
 // Running hozir sync ketayotganini bildiradi.
-func (s *Syncer) Running() bool {
+func (s *syncService) Running() bool {
 	return s.running.Load()
 }
 
-// pagedEntity — limit/offset bilan sahifalanadigan ro'yxat.
-type pagedEntity struct {
-	name     string
-	path     string
-	itemsKey string // javobdagi massiv kaliti
-	query    url.Values
-	toRecord func(json.RawMessage) (models.Record, error)
-}
-
-func (s *Syncer) pagedEntities() []pagedEntity {
+func (s *syncService) pagedEntities() []models.PagedEntity {
 	wh := url.Values{}
 	if s.opt.Warehouse != "" {
 		wh.Set("warehouse", s.opt.Warehouse)
 	}
-	return []pagedEntity{
-		{name: "orders", path: "/orders", itemsKey: "orders", toRecord: orderRecord},
-		{name: "packages", path: "/packages", itemsKey: "packages", query: wh, toRecord: packageRecord},
-		{name: "handovers", path: "/inbound/handovers", itemsKey: "handovers", toRecord: handoverRecord},
+	return []models.PagedEntity{
+		{Name: "orders", Path: "/orders", ItemsKey: "orders", ToRecord: orderRecord},
+		{Name: "packages", Path: "/packages", ItemsKey: "packages", Query: wh, ToRecord: packageRecord},
+		{Name: "handovers", Path: "/inbound/handovers", ItemsKey: "handovers", ToRecord: handoverRecord},
 	}
 }
 
 // Run to'liq sync: orders, packages, handovers, keyin shelves snapshot.
 // Bir vaqtda faqat bitta Run ishlaydi, ikkinchisi ErrAlreadyRunning oladi.
 // Xato bo'lsa ham, shu paytgacha saqlangan sahifalar bazada qoladi.
-func (s *Syncer) Run(ctx context.Context) (*models.SyncRun, error) {
+func (s *syncService) Run(ctx context.Context) (*models.SyncRun, error) {
 	if !s.running.CompareAndSwap(false, true) {
 		return nil, ErrAlreadyRunning
 	}
@@ -110,11 +99,11 @@ func (s *Syncer) Run(ctx context.Context) (*models.SyncRun, error) {
 	return run, runErr
 }
 
-func (s *Syncer) runAll(ctx context.Context, run *models.SyncRun) error {
+func (s *syncService) runAll(ctx context.Context, run *models.SyncRun) error {
 	first := true
 	for _, e := range s.pagedEntities() {
 		if err := s.syncPaged(ctx, run, e, &first); err != nil {
-			return fmt.Errorf("%s: %w", e.name, err)
+			return fmt.Errorf("%s: %w", e.Name, err)
 		}
 	}
 	if err := s.syncShelves(ctx, run, &first); err != nil {
@@ -123,8 +112,8 @@ func (s *Syncer) runAll(ctx context.Context, run *models.SyncRun) error {
 	return nil
 }
 
-func (s *Syncer) syncPaged(ctx context.Context, run *models.SyncRun, e pagedEntity, first *bool) error {
-	run.Entities = append(run.Entities, models.EntityResult{Entity: e.name})
+func (s *syncService) syncPaged(ctx context.Context, run *models.SyncRun, e models.PagedEntity, first *bool) error {
+	run.Entities = append(run.Entities, models.EntityResult{Entity: e.Name})
 	res := func() *models.EntityResult { return &run.Entities[len(run.Entities)-1] }
 
 	offset := 0
@@ -134,21 +123,21 @@ func (s *Syncer) syncPaged(ctx context.Context, run *models.SyncRun, e pagedEnti
 		}
 
 		q := url.Values{}
-		for k, v := range e.query {
+		for k, v := range e.Query {
 			q[k] = v
 		}
 		q.Set("limit", strconv.Itoa(s.opt.PageSize))
 		q.Set("offset", strconv.Itoa(offset))
 
 		var page map[string]json.RawMessage
-		if err := s.client.Get(ctx, e.path, q, &page); err != nil {
+		if err := s.client.Get(ctx, e.Path, q, &page); err != nil {
 			return err
 		}
 
 		var items []json.RawMessage
-		if raw, ok := page[e.itemsKey]; ok && string(raw) != "null" {
+		if raw, ok := page[e.ItemsKey]; ok && string(raw) != "null" {
 			if err := json.Unmarshal(raw, &items); err != nil {
-				return fmt.Errorf("%q massiv emas: %w", e.itemsKey, err)
+				return fmt.Errorf("%q massiv emas: %w", e.ItemsKey, err)
 			}
 		}
 		if raw, ok := page["total"]; ok {
@@ -160,10 +149,10 @@ func (s *Syncer) syncPaged(ctx context.Context, run *models.SyncRun, e pagedEnti
 
 		records := make([]models.Record, 0, len(items))
 		for _, item := range items {
-			rec, err := e.toRecord(item)
+			rec, err := e.ToRecord(item)
 			if err != nil {
 				res().Skipped++
-				logger.Warnf("%s: yozuv o'tkazib yuborildi (offset %d): %v", e.name, offset, err)
+				logger.Warnf("%s: yozuv o'tkazib yuborildi (offset %d): %v", e.Name, offset, err)
 				continue
 			}
 			records = append(records, rec)
@@ -171,7 +160,7 @@ func (s *Syncer) syncPaged(ctx context.Context, run *models.SyncRun, e pagedEnti
 
 		res().Fetched += len(items)
 		res().LastOffset = offset
-		run.LastEntity, run.LastOffset = e.name, offset
+		run.LastEntity, run.LastOffset = e.Name, offset
 		if _, err := s.store.SavePage(ctx, run, records); err != nil {
 			return fmt.Errorf("offset %d saqlash: %w", offset, err)
 		}
@@ -188,7 +177,7 @@ func (s *Syncer) syncPaged(ctx context.Context, run *models.SyncRun, e pagedEnti
 	// lekin farqni ko'rish uchun logga yozamiz.
 	if t := res().APITotal; t != nil && res().Fetched != *t {
 		logger.Warnf("%s: olingan %d ta, API total %d ta (sahifalar siljigan bo'lishi mumkin)",
-			e.name, res().Fetched, *t)
+			e.Name, res().Fetched, *t)
 	}
 	return nil
 }
@@ -198,7 +187,7 @@ func (s *Syncer) syncPaged(ctx context.Context, run *models.SyncRun, e pagedEnti
 const specialShelfSuffix = "_shelf"
 
 // syncShelves /shelves snapshot'ini (pagination yo'q) javonlar va qutilar (tiles) jadvaliga yozadi.
-func (s *Syncer) syncShelves(ctx context.Context, run *models.SyncRun, first *bool) error {
+func (s *syncService) syncShelves(ctx context.Context, run *models.SyncRun, first *bool) error {
 	run.Entities = append(run.Entities, models.EntityResult{Entity: "shelves"})
 	res := &run.Entities[len(run.Entities)-1]
 
@@ -268,7 +257,7 @@ func (s *Syncer) syncShelves(ctx context.Context, run *models.SyncRun, first *bo
 
 // pause so'rovlar orasida REQUEST_DELAY_MS kutadi (birinchi so'rovdan oldin emas):
 // stend tez-tez so'rovdan yiqilib qolgan edi.
-func (s *Syncer) pause(ctx context.Context, first *bool) error {
+func (s *syncService) pause(ctx context.Context, first *bool) error {
 	if *first {
 		*first = false
 		return nil

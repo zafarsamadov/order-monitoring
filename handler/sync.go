@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/http"
 
-	"order-monitoring/syncer"
+	"order-monitoring/service"
 
 	"github.com/gin-gonic/gin"
 )
@@ -14,9 +14,9 @@ import (
 // Sync ketayotgan bo'lsa 409.
 func (h *Handler) Sync(c *gin.Context) {
 	// Mijoz ulanishni uzsa ham sync oxirigacha (yoki xatogacha) davom etadi.
-	run, err := h.syncer.Run(context.WithoutCancel(c.Request.Context()))
+	run, err := h.service.Sync().Run(context.WithoutCancel(c.Request.Context()))
 	switch {
-	case errors.Is(err, syncer.ErrAlreadyRunning):
+	case errors.Is(err, service.ErrAlreadyRunning):
 		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 	case err != nil && run == nil:
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -30,10 +30,10 @@ func (h *Handler) Sync(c *gin.Context) {
 
 // SyncStatus GET /sync/status — oxirgi sync natijasi va hozir ketayotgani. Faqat o'qiydi.
 func (h *Handler) SyncStatus(c *gin.Context) {
-	run, err := h.storage.Sync().LastRun(c.Request.Context())
+	run, err := h.service.Sync().LastRun(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"running": h.syncer.Running(), "last_run": run})
+	c.JSON(http.StatusOK, gin.H{"running": h.service.Sync().Running(), "last_run": run})
 }

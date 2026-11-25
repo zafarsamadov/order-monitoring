@@ -1,15 +1,13 @@
 package handler
 
 import (
-	"order-monitoring/storage"
-	"order-monitoring/syncer"
+	"order-monitoring/service"
 )
 
 type Handler struct {
-	storage storage.StorageI
-	syncer  *syncer.Syncer
+	service service.ServiceI
 }
 
-func NewHandler(storage storage.StorageI, syncer *syncer.Syncer) *Handler {
-	return &Handler{storage: storage, syncer: syncer}
+func NewHandler(service service.ServiceI) *Handler {
+	return &Handler{service: service}
 }

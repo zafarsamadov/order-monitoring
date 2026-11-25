@@ -11,6 +11,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"order-monitoring/models"
 )
 
 // fakeStand — soxta stend: login token beradi, qolgan so'rovlarga handler javob beradi.
@@ -42,7 +44,7 @@ func newTestClient(t *testing.T, f *fakeStand) *Client {
 	t.Helper()
 	srv := httptest.NewServer(f)
 	t.Cleanup(srv.Close)
-	c := New(Options{BaseURL: srv.URL, Email: "e", Password: "p", Timeout: 2 * time.Second, MaxRetries: 3})
+	c := New(models.DonaOptions{BaseURL: srv.URL, Email: "e", Password: "p", Timeout: 2 * time.Second, MaxRetries: 3})
 	c.baseBackoff = time.Millisecond
 	c.maxBackoff = 5 * time.Millisecond
 	return c
@@ -125,7 +127,7 @@ func TestConnectionRefusedIsRetriedAndHidesHost(t *testing.T) {
 	addr := srv.URL
 	srv.Close() // endi port yopiq: connection refused
 
-	c := New(Options{BaseURL: addr, Timeout: time.Second, MaxRetries: 2})
+	c := New(models.DonaOptions{BaseURL: addr, Timeout: time.Second, MaxRetries: 2})
 	c.baseBackoff = time.Millisecond
 	c.token = "tok"
 
