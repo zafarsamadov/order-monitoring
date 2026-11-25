@@ -62,6 +62,8 @@ type fakeDona struct {
 	fail500    bool          // birinchi /orders so'roviga 500 qaytarish
 	block      chan struct{} // berilsa, /orders shu yopilguncha kutadi
 	started    chan struct{}
+	maxLimit   int // >0 bo'lsa server limit'ni shu songa kesadi
+	failOffset int // >0 bo'lsa shu offset'dagi /orders har doim 500 qaytaradi
 }
 
 func (f *fakeDona) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -86,11 +88,15 @@ func (f *fakeDona) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 			<-f.block
 		}
-		if f.fail500 && hit == 1 {
+		f.mu.Lock()
+		if (f.fail500 && hit == 1) || (f.failOffset > 0 && offset == f.failOffset) {
+			f.mu.Unlock()
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		f.mu.Lock()
+		if f.maxLimit > 0 && limit > f.maxLimit {
+			limit = f.maxLimit
+		}
 		writeJSON(w, map[string]any{"orders": page(f.orders, limit, offset), "total": len(f.orders)})
 		f.mu.Unlock()
 	case "/packages":
@@ -256,5 +262,68 @@ func TestSecondSyncWhileRunningIsRejected(t *testing.T) {
 	close(f.block)
 	if err := <-done; err != nil {
 		t.Fatalf("1-sync: %v", err)
+	}
+}
+
+// Server limit'ni kesib qo'ysa (3 so'raymiz, 2 beradi), sync qisqa sahifada to'xtab qolmaydi:
+// total'gacha davom etadi.
+func TestSyncServerCapsLimit(t *testing.T) {
+	store := newTestStore(t)
+	f := &fakeDona{orders: makeOrders(7), maxLimit: 2}
+	s := newTestSyncer(t, f, store)
+
+	run, err := s.Run(context.Background())
+	if err != nil {
+		t.Fatalf("sync: %v", err)
+	}
+	if got := countRows(t, store, "orders"); got != 7 {
+		t.Fatalf("orders: 7 kutilgan, bor %d", got)
+	}
+	if f.ordersHits != 4 { // 2+2+2+1
+		t.Fatalf("4 sahifa kutilgan, /orders so'rovlari: %d", f.ordersHits)
+	}
+	if run.Entities[0].Fetched != 7 {
+		t.Fatalf("orders fetched: 7 kutilgan, bor %+v", run.Entities[0])
+	}
+}
+
+// 2-sahifada tiklanmaydigan xato: 1-sahifa bazada qoladi, run failed bo'ladi.
+// Server tuzalgach keyingi sync qolganini oladi, dublikat yo'q.
+func TestSyncFailsMidwayThenResumes(t *testing.T) {
+	store := newTestStore(t)
+	f := &fakeDona{orders: makeOrders(7), failOffset: 3}
+	s := newTestSyncer(t, f, store)
+	ctx := context.Background()
+
+	run, err := s.Run(ctx)
+	if err == nil {
+		t.Fatal("xato kutilgan edi")
+	}
+	// LastOffset — oxirgi saqlangan sahifa (0); 3-offset saqlanmadi.
+	if run == nil || run.Status != models.SyncFailed || run.LastEntity != "orders" || run.LastOffset != 0 {
+		t.Fatalf("failed run (orders, offset 0) kutilgan, bor %+v", run)
+	}
+	if got := countRows(t, store, "orders"); got != 3 {
+		t.Fatalf("1-sahifadagi 3 order saqlanishi kerak edi, bor %d", got)
+	}
+	last, err := store.Sync().LastRun(ctx)
+	if err != nil || last.Status != models.SyncFailed || last.Error == "" {
+		t.Fatalf("sync_runs'da failed holat kutilgan, bor %+v, %v", last, err)
+	}
+
+	f.mu.Lock()
+	f.failOffset = 0
+	f.mu.Unlock()
+
+	run, err = s.Run(ctx)
+	if err != nil {
+		t.Fatalf("2-sync: %v", err)
+	}
+	if got := countRows(t, store, "orders"); got != 7 {
+		t.Fatalf("orders: 7 kutilgan, bor %d", got)
+	}
+	orders := run.Entities[0]
+	if orders.Inserted != 4 || orders.Unchanged != 3 {
+		t.Fatalf("orders: 4 yangi va 3 o'zgarmagan kutilgan, bor %+v", orders)
 	}
 }

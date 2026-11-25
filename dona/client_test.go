@@ -178,3 +178,46 @@ func TestClientExposesOnlyLoginAndGet(t *testing.T) {
 		t.Fatalf("Client ochiq metodlari faqat Get va Login bo'lishi kerak, bor: %v", names)
 	}
 }
+
+// 429 + Retry-After: backoff o'rniga server aytgan vaqt kutiladi, lekin maxBackoff dan oshmaydi.
+func TestGetHonorsRetryAfter(t *testing.T) {
+	f := &fakeStand{handler: func(w http.ResponseWriter, r *http.Request, call int) {
+		if call == 1 {
+			w.Header().Set("Retry-After", "1")
+			w.WriteHeader(http.StatusTooManyRequests)
+			return
+		}
+		w.Write([]byte(`{}`))
+	}}
+	c := newTestClient(t, f)
+	c.maxBackoff = 200 * time.Millisecond // Retry-After 1s shu chegaraga kesiladi
+
+	start := time.Now()
+	if err := c.Get(context.Background(), "/orders", nil, &struct{}{}); err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	// baseBackoff 1ms; 150ms dan ko'p kutilgan bo'lsa — Retry-After ishlatilgan.
+	if elapsed := time.Since(start); elapsed < 150*time.Millisecond || elapsed > time.Second {
+		t.Fatalf("~200ms kutish kutilgan edi, bo'ldi %s", elapsed)
+	}
+}
+
+// 200 keldi, lekin tanasi kesilgan JSON — tarmoq uzilishi kabi qayta urinadi.
+func TestGetRetriesOnBrokenJSON(t *testing.T) {
+	f := &fakeStand{handler: func(w http.ResponseWriter, r *http.Request, call int) {
+		if call == 1 {
+			w.Write([]byte(`{"orders":[{"id":"o1"`))
+			return
+		}
+		w.Write([]byte(`{"ok":true}`))
+	}}
+	c := newTestClient(t, f)
+
+	var out struct{ OK bool }
+	if err := c.Get(context.Background(), "/orders", nil, &out); err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	if !out.OK || f.calls != 2 {
+		t.Fatalf("2 urinish va ok=true kutilgan, bo'ldi %d, %v", f.calls, out.OK)
+	}
+}

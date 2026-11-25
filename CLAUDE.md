@@ -51,7 +51,9 @@ Kutubxonalar: gin, pgx v4 (pgxpool), godotenv, cast. Ortiqcha bog'liqlik qo'shil
 
 ## Sync konvensiyasi
 - limit/offset pagination, `PAGE_SIZE` (50), `REQUEST_DELAY_MS`, `HTTP_TIMEOUT_SEC`, `MAX_RETRIES`.
-- Retry: timeout, connection refused, 5xx, 429 → exponential backoff + jitter. 4xx retry yo'q. 401 → bir marta qayta login.
+- Retry: timeout, connection refused, 5xx, 429, buzilgan JSON → exponential backoff + jitter; `Retry-After` bo'lsa
+  shuncha (`maxBackoff` gacha). 4xx retry yo'q. 401 → bir marta qayta login.
+- Pagination to'xtash: bo'sh sahifa yoki `offset >= total`. Qisqa sahifa faqat `total` yo'q bo'lsa tugash belgisi.
 - Har sahifa bitta tranzaksiyada upsert, tabiiy kalit `id`. `raw jsonb` + `raw_hash`: hash teng bo'lsa faqat
   `last_synced_at` yangilanadi (`unchanged`), aks holda `updated`.
 - `sync_runs`: holat, inserted/updated/unchanged, oxirgi offset, xato, API `total`. Bir vaqtda bitta sync (409).
@@ -70,10 +72,15 @@ Kutubxonalar: gin, pgx v4 (pgxpool), godotenv, cast. Ortiqcha bog'liqlik qo'shil
   sync_runs), `dona` klient, `syncer`, `POST /sync`, `GET /sync/status`, Makefile. Testlar o'tadi.
 - **Frontend (sync qismi)**: `web/` (index.html, style.css, app.js, embed.go), `GET /` va `/static/*`.
   Faqat "Sinxronlash" tugmasi; anomaliyalar va CSV keyin.
-- **Real sync** (2026-11-24): orders 638/638, packages 16/16 (filtrsiz `/packages?warehouse=` ishlaydi),
-  handovers 39/39, shelves+tiles 16. Ikkinchi sync: 0 yangi, 0 yangilangan, 709 o'zgarmagan.
-  Keyingi qadam: SQL bilan ma'lumot tahlili → qoida nomzodlari (1b).
-- `/packages`: `warehouse=WH-TAS-01` bilan 16 ta, parametrsiz 641 ta (sync #4). Qaysi biri to'g'ri — ochiq savol.
+- **Real sync** (2026-11-24): orders 638/638, packages 641/641, handovers 39/39, shelves+tiles 16.
+  Takroriy sync: 0 yangi, 0 yangilangan, hammasi o'zgarmagan.
+- **`/packages` qarori:** `DONA_WAREHOUSE_CODE` bo'sh, ya'ni filtrsiz (641 ta). `warehouse=WH-TAS-01` bilan faqat 16 ta
+  keladi, lekin orderlar filtrlanmaydi va qoidalar qutini orderga bog'laydi — 16 ta bilan 2–6-qoidalar ishlamaydi.
+- **Sync mustahkamligi (2026-11-25):** pagination `total` bo'yicha to'xtaydi (server limit'ni kessa ham davom etadi);
+  429/503 da `Retry-After` hisobga olinadi (`maxBackoff` gacha); kesilgan/HTML javob (`DecodeError`) qayta urinadi.
+  Testlar: `TestSyncServerCapsLimit`, `TestSyncFailsMidwayThenResumes`, `TestGetHonorsRetryAfter`, `TestGetRetriesOnBrokenJSON`.
+- **Ma'lum cheklov:** sync paytida stendga yangi yozuv qo'shilsa, offset siljib bitta yozuv o'tkazib yuborilishi mumkin.
+  Upsert dublikat bermaydi, keyingi sync uni oladi; `fetched != total` bo'lsa logda ogohlantirish chiqadi.
 
 ## Buyruqlar
 - `make test-db-up && make test` — testlar (sync testlari Postgres'siz skip bo'ladi), `make test-db-down`.

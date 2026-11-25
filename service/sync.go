@@ -166,9 +166,10 @@ func (s *syncService) syncPaged(ctx context.Context, run *models.SyncRun, e mode
 		}
 
 		offset += len(items)
+		// To'xtash: bo'sh sahifa yoki total'ga yetdik. Qisqa sahifa faqat total yo'q bo'lsa tugash belgisi:
+		// server limit'ni o'zi kesishi mumkin (50 so'rasak 20 beradi), unda davom etish kerak.
 		total := res().APITotal
-		// To'xtash: bo'sh yoki to'liq bo'lmagan sahifa, yoki total'ga yetdik.
-		if len(items) == 0 || len(items) < s.opt.PageSize || (total != nil && offset >= *total) {
+		if len(items) == 0 || (total != nil && offset >= *total) || (total == nil && len(items) < s.opt.PageSize) {
 			break
 		}
 	}

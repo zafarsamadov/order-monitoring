@@ -12,6 +12,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"sync"
 	"time"
 
@@ -130,7 +131,7 @@ func (c *Client) withRetry(ctx context.Context, path string, build func() (*http
 	var lastErr error
 	for attempt := 0; attempt <= c.opt.MaxRetries; attempt++ {
 		if attempt > 0 {
-			wait := pkg.Backoff(attempt, c.baseBackoff, c.maxBackoff)
+			wait := c.retryWait(attempt, lastErr)
 			logger.Warnf("%v; %d-urinish %s dan keyin", lastErr, attempt+1, wait.Round(time.Millisecond))
 			if err := pkg.Sleep(ctx, wait); err != nil {
 				return err
@@ -150,6 +151,16 @@ func (c *Client) withRetry(ctx context.Context, path string, build func() (*http
 		}
 	}
 	return fmt.Errorf("%d urinishdan keyin ham bo'lmadi: %w", c.opt.MaxRetries+1, lastErr)
+}
+
+// retryWait: server Retry-After bergan bo'lsa shuncha kutiladi, aks holda backoff.
+// Ikkalasi ham maxBackoff dan oshmaydi — server bizni uzoq ushlab turolmaydi.
+func (c *Client) retryWait(attempt int, lastErr error) time.Duration {
+	var httpErr *HTTPError
+	if errors.As(lastErr, &httpErr) && httpErr.RetryAfter > 0 {
+		return min(httpErr.RetryAfter, c.maxBackoff)
+	}
+	return pkg.Backoff(attempt, c.baseBackoff, c.maxBackoff)
 }
 
 func (c *Client) send(req *http.Request, path string, out any) error {
@@ -174,10 +185,17 @@ func (c *Client) send(req *http.Request, path string, out any) error {
 	}
 
 	if resp.StatusCode >= 400 {
-		return &HTTPError{Path: path, Status: resp.StatusCode, Body: pkg.Truncate(string(body), maxErrBody)}
+		// Retry-After faqat soniyalarda o'qiladi (sana ko'rinishi bo'lsa — e'tiborsiz, backoff ishlaydi).
+		secs, _ := strconv.Atoi(resp.Header.Get("Retry-After"))
+		return &HTTPError{
+			Path:       path,
+			Status:     resp.StatusCode,
+			Body:       pkg.Truncate(string(body), maxErrBody),
+			RetryAfter: time.Duration(secs) * time.Second,
+		}
 	}
 	if err := json.Unmarshal(body, out); err != nil {
-		return fmt.Errorf("%s: javob JSON emas: %w", path, err)
+		return &DecodeError{Path: path, Err: err}
 	}
 	return nil
 }
