@@ -210,6 +210,21 @@ berish xavfi katta.
 avtomatik "tiqilib qolgan" bo'lib chiqadi. 5 tasida `transit_since` umuman yo'q.
 *Misol:* HND-TESTPM-h15 — 2026-11-11 dan beri IN_TRANSIT.
 
+**Jo'natishga tayyor order, lekin bitta ham qutisi yo'q** · 7 ta order
+*Nega xato bo'lishi mumkin:* order `SORTING / READY_TO_SHIP` ("Ready to ship · waiting for the courier"), lekin
+`/packages` da unga tegishli birorta quti yo'q — jo'natadigan narsa ko'rinmaydi.
+*Nega qoida qilinmadi:* ziddiyat bizning bazamizda, stendning o'zida emas bo'lishi mumkin: `/packages` hamma qutini
+qaytarmagan bo'lishi mumkin (masalan `warehouse=` filtri bilan faqat 16 ta keladi). Qutining yo'qligi uning
+mavjud emasligini isbotlamaydi.
+*Misol:* LS1794375397FV, WR1794375397AP — READY_TO_SHIP, qutisi yo'q.
+
+**Qayta qadoqlangan quti (`REPACKED`) qayerda ekani noma'lum** · 26 ta quti
+*Nega xato bo'lishi mumkin:* qutida na `held_since` (kimda/qachondan beri), na `shelf_code` bor — u qayerda ekanini
+aytib bo'lmaydi.
+*Nega qoida qilinmadi:* qayta qadoqlash endi boshlangan va quti hali joylashtirilmagan bo'lishi mumkin. Hammasi
+qaytish yo'lidagi orderlarda (`RETURN_TO_HUB`) — jarayonning oraliq holati.
+*Misol:* GRP-428899 — PKG-RPK-051890 REPACKED.
+
 ### 3. G'alati, lekin normal
 
 **Bitta javonda bir nechta orderning qutilari**
