@@ -7,7 +7,7 @@ o'z Postgres bazamizga saqlaydi va anomaliyalarni topadi. Foydalanuvchi uchun hu
 
 ## Ish tartibi
 1. Katta o'zgarishdan oldin reja tuziladi va foydalanuvchi tasdig'idan keyin bajariladi.
-2. Endpoint yo'li yoki maydon nomini o'ylab topma. Namunada (`docs/api-samples/`) yo'q bo'lsa — so'ra.
+2. Endpoint yo'li yoki maydon nomini o'ylab topma. Namunada (`apis/`) yo'q bo'lsa — so'ra.
 3. Docker fayllarini yozishdan oldin foydalanuvchidan shablon so'ra.
 4. **Claude commit qilmaydi.** Ish oxirida commit xabarini taklif qiladi.
 5. Jarayon yoki konteyner ishga tushirilsa — oldindan aytiladi va ish tugagach to'xtatiladi.
@@ -17,7 +17,7 @@ o'z Postgres bazamizga saqlaydi va anomaliyalarni topadi. Foydalanuvchi uchun hu
   boshqa HTTP method yuboradigan kod yozilmaydi. Bu testda tekshiriladi.
 - PVZ kassa va partners endpointlariga murojaat yo'q.
 - Base URL, email, parol faqat `.env` dan. Kod, test, README, logga yozilmaydi; token/parol logda `***`.
-- `.env`, `apis/` (xom namunalar, sirlar bor), `docs/` (tozalangan namunalar) — `.gitignore`da.
+- `.env`, `apis/` (xom namunalar, sirlar bor) — `.gitignore`da.
 - Bizning bazaga **faqat sync yozadi** (upsert + `sync_runs`). Sync hech qachon `DELETE`/`TRUNCATE` qilmaydi.
 - Anomaliyalar, timeline, hisobot faqat `SELECT` qiladi. Anomaliyalar jadvalga saqlanmaydi, har so'rovda hisoblanadi.
 
@@ -64,7 +64,6 @@ Kutubxonalar: gin, pgx v4 (pgxpool), godotenv, cast. Ortiqcha bog'liqlik qo'shil
 - Modellar `models/` da, umumiy yordamchilar `pkg/` da. Domen paketida faqat o'sha domenga xos kod.
 - SQL: `query := \`...\`` ko'p qatorli, ustunlar alohida qatorda, `rows.Scan(` argumentlari ham alohida qatorda.
 - Izohlar o'zbekcha, qisqa, "nega"ni tushuntiradi.
-- `docs/AI_NOTES.md`: Claude nima yozdi, foydalanuvchi nimani o'zgartirdi/tashladi, qayerda xato bo'ldi.
 
 ## Holat (2026-11-25)
 - Sync tayyor va testlangan. Real sync: orders 638, packages 641, handovers 39, javonlar 10.

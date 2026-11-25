@@ -320,5 +320,19 @@ Har bir test o'z Postgres sxemasida ishlaydi va oxirida o'sha sxemani o'chiradi.
 
 ## AI bilan ishlash
 
-> TODO: AI (Claude Code) nima qildi, nimani men o'zgartirdim yoki tashladim, AI qayerda xato qildi.
-> Batafsil qaydlar: `docs/AI_NOTES.md`.
+Loyihada AI (Claude Code) yordamida ishladim.
+
+**Men nima qildim.** Asosiy anomaliya yo'nalishlarini o'zim belgiladim:
+- order statuslari bir-biriga mos emasligi;
+- order va uning qutilari bir-biriga mos emasligi;
+- order (qutisi) noma'lum, ya'ni aslida mavjud bo'lmagan javonda turgani.
+
+**AI nima taklif qildi.** Shu yo'nalishlarga qarab AI vaqtga oid qoidalarni taklif qildi: yaratilishidan oldin
+yo'lga chiqish yoki qabul qilish, bosqich boshlanishidan oldingi faollik, yetkazib berish holatida ko'p kun qolib
+ketish. Ulardan bir qismini qabul qildim (`handover_timestamps_out_of_order`, `activity_before_lifecycle_start`).
+"Ko'p kun yo'lda qolib ketish"ni esa qoida qilmadim: ma'lumotda ziddiyat yo'q, faqat taxminiy chegara — u
+[Shubhali](#2-shubhali-otkazib-yuborildi) bo'limida.
+
+**AI qayerda xato qildi.** AI biznes mantiqni repo (storage) qatlamiga yozmoqchi bo'ldi. Bu to'g'ri kelmasligini
+ko'rib, `service` qatlamini qo'shdim: endi handler → service → repo; repo faqat bazadan o'qiydi/yozadi,
+mantiq (filtrlash, hisoblash, timeline yig'ish) service'da.

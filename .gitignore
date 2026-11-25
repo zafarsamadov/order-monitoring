@@ -1,8 +1,7 @@
 # sirlar
 .env
-# DevTools xom namunalari (token/parol bor) va ularning tozalangan nusxasi
+# DevTools xom namunalari (token/parol bor)
 apis/
-docs/
 task.md
 
 /bin/

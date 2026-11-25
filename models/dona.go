@@ -8,7 +8,7 @@ import (
 
 // DONA stendi javoblaridagi yozuvlar. Faqat alohida ustunga chiqariladigan maydonlar
 // ko'rsatilgan; to'liq JSON baribir `raw` ustunida saqlanadi.
-// Maydon nomlari docs/api-samples/ dagi namunalardan olingan.
+// Maydon nomlari stend javoblari namunalaridan olingan.
 
 type DonaOrder struct {
 	ID               string        `json:"id"`
