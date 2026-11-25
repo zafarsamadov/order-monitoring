@@ -39,7 +39,6 @@ type AnomaliesRepoI interface {
 	DispatchedPackageOnShelfRule(ctx context.Context) (*models.RuleItem, error)
 	HandoverTimestampsOutOfOrderRule(ctx context.Context) (*models.RuleItem, error)
 	ActivityBeforeLifecycleStartRule(ctx context.Context) (*models.RuleItem, error)
-	HandoverStuckInTransitRule(ctx context.Context) (*models.RuleItem, error)
 	HandoverReceivedIncompleteRule(ctx context.Context) (*models.RuleItem, error)
 	OrderItemCountMismatchRule(ctx context.Context) (*models.RuleItem, error)
 }

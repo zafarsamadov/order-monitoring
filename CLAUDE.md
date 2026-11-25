@@ -70,7 +70,8 @@ Kutubxonalar: gin, pgx v4 (pgxpool), godotenv, cast. Ortiqcha bog'liqlik qo'shil
 - Sync tayyor va testlangan. Real sync: orders 638, packages 641, handovers 39, javonlar 10.
   Takroriy sync: 0 yangi, 0 yangilangan.
 - API: `POST /sync`, `GET /sync/status`, `GET /orders/{code}/timeline`, `GET /anomalies?rule=&severity=`.
-- Qoidalar: 10 ta (2–11), biznes mantiq bo'yicha tekshirilgan; 1-qoida 2-qoidaga qo'shilgan. Ta'riflar va dalillar: `task.md`.
+- Qoidalar: 9 ta, faqat aniq xatolar (ma'lumot o'ziga zid). Shubhali holatlar qoida qilinmaydi — README'da
+  "Shubhali" bo'limida sababi bilan yoziladi. Ta'riflar va dalillar: README "Domen" bo'limi.
 - Qolgan ishlar: qoidalar testlari, HTML/CSV hisobot, timeline'ga anomaliyalarni ulash, README'ning TODO bo'limlari.
 - Ma'lum cheklov: sync paytida stendga yangi yozuv qo'shilsa, offset siljib bitta yozuv o'tkazib yuborilishi mumkin;
   keyingi sync uni oladi.

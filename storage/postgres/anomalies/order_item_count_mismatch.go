@@ -9,7 +9,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-// 10-qoida: order tovar soni qutilardagi tovarlar yig'indisiga teng.
+// 9-qoida: order tovar soni qutilardagi tovarlar yig'indisiga teng.
 // orders.item_count = SUM(packages.item_count).
 // item_count = 0 "noma'lum" degani (638 orderdan faqat 39 tasida to'ldirilgan), shuning uchun tekshirilmaydi.
 const (

@@ -16,5 +16,4 @@ const (
 	returnToHub       = "RETURN_TO_HUB"
 	dispatched        = "DISPATCHED"
 	received          = "RECEIVED"
-	inTransit         = "IN_TRANSIT"
 )

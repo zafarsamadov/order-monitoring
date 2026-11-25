@@ -10,10 +10,9 @@ bazasiga saqlaydigan va ulardagi nomutanosibliklarni (anomaliyalarni) topadigan 
 1. [Ishga tushirish](#ishga-tushirish)
 2. [Sync](#sync)
 3. [Domen: nima normal, nima xato](#domen-nima-normal-nima-xato)
-4. [Qoidalar](#qoidalar)
-5. [API va hisobot](#api-va-hisobot)
-6. [Testlar](#testlar)
-7. [AI bilan ishlash](#ai-bilan-ishlash)
+4. [API va hisobot](#api-va-hisobot)
+5. [Testlar](#testlar)
+6. [AI bilan ishlash](#ai-bilan-ishlash)
 
 ---
 
@@ -124,13 +123,96 @@ Real sync natijasi (2026-11-24): orders 638/638, packages 641/641, handovers 39/
 
 ## Domen: nima normal, nima xato
 
-> TODO: order, quti va handover hayot yo'li; statuslar ma'nosi; normal holatlar (yolg'on signal bo'lmasligi uchun).
+Obyektlar: **order** (buyurtma), **package** (quti), **handover** (sotuvchi tovarini omborga topshirishi),
+**shelf** (javon). Bog'lanish: `order.id = package.order_group_id = handover.order_group_id`.
 
----
+Topilgan holatlar 3 guruhga ajratilgan:
 
-## Qoidalar
+| Guruh | Nima qilindi |
+|---|---|
+| [Aniq xato](#1-aniq-xatolar) — ma'lumot o'ziga zid | qoida yozildi |
+| [Shubhali](#2-shubhali-otkazib-yuborildi) — xato ham, normal ham bo'lishi mumkin | qoida yozilmadi, sababi pastda |
+| [G'alati, lekin normal](#3-galati-lekin-normal) | qoida yozilmadi |
 
-> TODO: har bir qoida uchun nega shunday, real bazadagi natija, severity va yolg'on signal tahlili.
+Sonlar — real sync natijasi (2026-11-24: 638 order, 641 quti, 39 handover, 10 javon).
+Qoidalar kodi: `storage/postgres/anomalies/<qoida_nomi>.go`.
+
+### 1. Aniq xatolar
+
+Har bir qoidada ikki maydon (yoki ikki yozuv) bir-biriga zid: ikkalasi bir vaqtda to'g'ri bo'la olmaydi.
+
+**`issued_order_package_returned`** · high · 26 ta order
+Order xaridorga topshirilgan (`lifecycle=OUT`, `ISSUED_TO_BUYER`), lekin qutilaridan biri `return_id` bilan omborga
+qaytgan (`RETURNED_TO_WAREHOUSE`).
+*Nega xato:* quti qaytganda order `RETURN` bosqichiga o'tadi — 216 ta qaytgan orderda aynan shunday. Bu yerda order
+holati qaytishni "ko'rmagan".
+*Misol:* GRP-231612 — PKG-RPT-810093 RETURNED_TO_WAREHOUSE, order hali READY_TO_SHIP.
+
+**`conflicting_package_statuses`** · medium · 26 ta order
+Order `RETURN_TO_HUB` ("kuryer qaytarishni olib kelyapti"), lekin qaytarilayotgan quti allaqachon
+`RETURNED_TO_SELLERS`.
+*Nega xato:* qaytish tartibi xaridor → hub → sotuvchi. Quti hali hub'ga yetmagan bo'lsa, sotuvchida bo'la olmaydi.
+*Misol:* GRP-428899 — PKG-RPT-046434 RETURNED_TO_SELLERS.
+
+**`returned_to_seller_in_warehouse`** · medium · 210 ta quti
+Quti sotuvchiga qaytarilgan (`RETURNED_TO_SELLERS`), lekin `shelf_code` hali javonni ko'rsatadi.
+*Nega xato:* javonning o'zi bu qutini sanamaydi — RET-01 da `box_count = 6`, bu faqat RETURNED_TO_WAREHOUSE qutilar.
+`shelf_code` eskirib qolgan.
+*Misol:* QV1794375397IV — PKG-9364 RET-01.
+
+**`package_on_unknown_shelf`** · high · 2 ta quti
+Omborda turgan quti (`RETURNED_TO_WAREHOUSE`) javonlar ro'yxatida yo'q javonda.
+*Nega xato:* `shelf_code` `/shelves` ro'yxatidagi hech bir javonga mos kelmaydi — quti omborda, lekin uni topib
+bo'lmaydi. Ombordan chiqib ketgan qutilar bu yerda tekshirilmaydi (ular yuqoridagi qoidada).
+*Misol:* GRP-216217 — PKG-9389 RET-T.
+
+**`dispatched_package_on_shelf`** · medium · 1 ta quti
+Quti jo'natilgan (`DISPATCHED`), lekin hali javonda.
+*Nega xato:* javon 0 ning `box_count = 3`, unda turibdi deb yozilgan qutilar esa 4 ta — ortiqchasi shu jo'natilgan quti.
+*Misol:* HC1794401226GR — PKG-10192, javon 0.
+
+**`handover_timestamps_out_of_order`** · high · 22 ta handover
+Handover vaqtlari tartibi buzilgan: `created_at ≤ transit_since ≤ received_at` bo'lishi kerak.
+*Nega xato:* yaratilmagan handover yo'lga chiqa yoki qabul qilina olmaydi.
+9 tasida qabul qilish yaratilishdan oldin (13 kungacha), 14 tasida yo'lga chiqish yaratilishdan aynan 2 soat oldin —
+bu vaqt zonasi xatosiga o'xshaydi.
+*Misol:* HND-TESTPM-w17 — received_at created_at dan 13 kun oldin.
+
+**`activity_before_lifecycle_start`** · medium · 3 ta order
+Orderning oxirgi faolligi joriy bosqich boshlanishidan oldin.
+*Nega xato:* bosqich o'zgarishining o'zi faollik, demak `last_activity_at ≥ lifecycle_since`. 1 daqiqagacha farq
+o'tkaziladi (yozish kechikishi).
+*Misol:* GZ1794375397MA — 12 kun oldin.
+
+**`handover_received_incomplete`** · medium · 3 ta handover
+Handover qabul qilingan (`RECEIVED`), lekin kelgan tovar (`item_count`) kutilganidan (`expected_qty`) kam.
+*Nega xato:* `RECEIVED` — qabul yakunlangan degani, kamomad bilan yopilgan. Stendda qisman qabul uchun alohida holat
+(masalan PARTIAL) yo'q, shuning uchun kamomad faqat shu yo'l bilan ko'rinadi. Yo'ldagi (`IN_TRANSIT`) handover'da
+kamomad normal — qism-qism kelishi mumkin, u tekshirilmaydi.
+*Misol:* EO1794401263JL — HND-2607-T, kelgan 1 / kutilgan 2.
+
+**`order_item_count_mismatch`** · low · 0 ta order
+Orderdagi tovar soni qutilardagi tovarlar yig'indisiga teng emas.
+*Nega xato:* qutilar orderning o'zidan yig'iladi, sonlar mos kelishi shart.
+Faqat `item_count > 0` bo'lgan orderlar tekshiriladi: stend bu maydonni 638 ta orderdan faqat 39 tasida to'ldiradi,
+0 — "noma'lum". Hozirgi ma'lumotda nomutanosiblik yo'q; maydon to'ldirilsa, qoida ishlaydi.
+
+### 2. Shubhali (o'tkazib yuborildi)
+
+Xato bo'lishi mumkin, lekin ma'lumotning o'zida ziddiyat yo'q — faqat taxmin. Qoida qilinmadi: yolg'on signal
+berish xavfi katta.
+
+**Handover uzoq vaqt yo'lda (`IN_TRANSIT`)** · 11 ta handover, 14 kungacha
+*Nega xato bo'lishi mumkin:* yuk yo'qolgan yoki qabul qilish belgilanmay qolgan bo'lishi mumkin.
+*Nega qoida qilinmadi:* ma'lumot o'ziga zid emas — handover hali yo'lda deyilgan va yo'lda bo'lishi mumkin.
+"Necha kun ko'p?" chegarasi (masalan 3 kun) taxmin, uni biznes belgilaydi. Bundan tashqari stend ma'lumoti
+2026-11-11 dan beri yangilanmagan: `now()` ga nisbatan hisoblasak, vaqt o'tgan sari har bir yo'ldagi handover
+avtomatik "tiqilib qolgan" bo'lib chiqadi. 5 tasida `transit_since` umuman yo'q.
+*Misol:* HND-TESTPM-h15 — 2026-11-11 dan beri IN_TRANSIT.
+
+### 3. G'alati, lekin normal
+
+> TODO
 
 ---
 

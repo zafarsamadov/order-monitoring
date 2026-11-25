@@ -12,7 +12,6 @@ type Repo struct {
 	*DispatchedPackageOnShelf
 	*HandoverTimestampsOutOfOrder
 	*ActivityBeforeLifecycleStart
-	*HandoverStuckInTransit
 	*HandoverReceivedIncomplete
 	*OrderItemCountMismatch
 }
@@ -26,7 +25,6 @@ func NewRepo(db *pgxpool.Pool) *Repo {
 		DispatchedPackageOnShelf:     NewDispatchedPackageOnShelfRepo(db),
 		HandoverTimestampsOutOfOrder: NewHandoverTimestampsOutOfOrderRepo(db),
 		ActivityBeforeLifecycleStart: NewActivityBeforeLifecycleStartRepo(db),
-		HandoverStuckInTransit:       NewHandoverStuckInTransitRepo(db),
 		HandoverReceivedIncomplete:   NewHandoverReceivedIncompleteRepo(db),
 		OrderItemCountMismatch:       NewOrderItemCountMismatchRepo(db),
 	}

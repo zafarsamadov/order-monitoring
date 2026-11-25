@@ -57,11 +57,6 @@ func (a *anomalyService) GetList(ctx context.Context, rule, severity string) (*m
 		return nil, err
 	}
 
-	handoverStuckInTransit, err := a.repo.HandoverStuckInTransitRule(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	handoverReceivedIncomplete, err := a.repo.HandoverReceivedIncompleteRule(ctx)
 	if err != nil {
 		return nil, err
@@ -80,7 +75,6 @@ func (a *anomalyService) GetList(ctx context.Context, rule, severity string) (*m
 		dispatchedPackageOnShelf,
 		handoverTimestampsOutOfOrder,
 		activityBeforeLifecycleStart,
-		handoverStuckInTransit,
 		handoverReceivedIncomplete,
 		orderItemCountMismatch,
 	} {
