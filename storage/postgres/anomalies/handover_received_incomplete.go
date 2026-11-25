@@ -9,7 +9,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-// 10-qoida: qabul qilingan handover to'liq bo'ladi.
+// 9-qoida: qabul qilingan handover to'liq bo'ladi.
 // status = RECEIVED bo'lsa, item_count expected_qty dan kam bo'lmaydi.
 const (
 	handoverReceivedIncompleteRule        = "handover_received_incomplete"

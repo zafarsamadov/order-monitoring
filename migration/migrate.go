@@ -21,7 +21,7 @@ var upFS embed.FS
 const migrationLockID = 7_310_001
 
 // Up hali qo'llanmagan up/*.sql fayllarni tartib bilan qo'llaydi.
-// rider-backend Makefile'idagi mantiq, faqat ilova start'ida Go ichida ishlaydi.
+// Qo'llangan versiyalar schema_migrations jadvalida saqlanadi.
 func Up(ctx context.Context, db *pgxpool.Pool) error {
 	// Bir vaqtda bir nechta jarayon (ilova nusxalari, parallel testlar) migratsiya qilsa,
 	// CREATE TABLE to'qnashadi. Advisory lock ularni navbatga qo'yadi. Lock ulanishga bog'liq,

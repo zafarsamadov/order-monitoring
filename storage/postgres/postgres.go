@@ -6,7 +6,7 @@ import (
 
 	"order-monitoring/migration"
 	"order-monitoring/storage"
-	rules "order-monitoring/storage/postgres/anomalies"
+	"order-monitoring/storage/postgres/anomalies"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 )
@@ -36,7 +36,7 @@ func NewPostgres(ctx context.Context, databaseURL string) (*Store, error) {
 		db:        pool,
 		sync:      NewSyncRepo(pool),
 		order:     NewOrderRepo(pool),
-		anomalies: rules.NewRepo(pool),
+		anomalies: anomalies.NewRepo(pool),
 	}, nil
 }
 

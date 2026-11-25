@@ -13,7 +13,8 @@ const (
 const (
 	issuedToBuyer     = "ISSUED_TO_BUYER"
 	returnedToSellers = "RETURNED_TO_SELLERS"
-	readyToShip       = "READY_TO_SHIP"
+	returnToHub       = "RETURN_TO_HUB"
 	dispatched        = "DISPATCHED"
 	received          = "RECEIVED"
+	inTransit         = "IN_TRANSIT"
 )

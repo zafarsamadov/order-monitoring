@@ -9,7 +9,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-// 6-qoida: jo'natilgan quti javonda qolmaydi.
+// 5-qoida: jo'natilgan quti javonda qolmaydi.
 // packages.status = DISPATCHED bo'lsa, shelf_code bo'sh bo'ladi.
 const (
 	dispatchedPackageOnShelfRule        = "dispatched_package_on_shelf"

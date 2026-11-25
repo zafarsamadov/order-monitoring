@@ -9,11 +9,13 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-// 3-qoida: bitta order qutilarining statuslari bir-biriga zid bo'lmaydi.
-// Bitta orderda bir vaqtda ISSUED_TO_BUYER va RETURNED_TO_SELLERS qutilar bo'lmaydi.
+// 2-qoida: qaytarish hodisalari tartib bilan bo'ladi: xaridor → hub → sotuvchi.
+// Order RETURN_TO_HUB ("kuryer qaytarishni olib kelyapti") bo'lsa, qaytarilgan quti (return_id)
+// hali sotuvchiga yetib bormagan bo'ladi.
+// Eslatma: bitta orderda ISSUED_TO_BUYER va RETURNED_TO_SELLERS qutilar bo'lishi o'zi normal (qisman qaytish).
 const (
 	conflictingPackageStatusesRule        = "conflicting_package_statuses"
-	conflictingPackageStatusesDescription = "Bitta orderda ham xaridorga topshirilgan, ham sotuvchiga qaytarilgan qutilar bor"
+	conflictingPackageStatusesDescription = "Kuryer qaytarishni hali hub'ga olib kelyapti, lekin qaytarilgan quti allaqachon sotuvchida"
 	conflictingPackageStatusesSeverity    = severityMedium
 )
 
@@ -38,16 +40,20 @@ func (c *ConflictingPackageStatuses) ConflictingPackageStatusesRule(ctx context.
 	query := `
 		SELECT
 			COALESCE(o.order_code, o.group_no, o.id),
-			string_agg(DISTINCT p.status, ', ' ORDER BY p.status)
+			string_agg(
+				COALESCE(p.package_no, p.id) || ' ' || p.status,
+				', ' ORDER BY p.package_no
+			)
 		FROM orders o
 		INNER JOIN packages p ON p.order_group_id = o.id
+		WHERE o.lifecycle_outcome = $1
+			AND p.return_id IS NOT NULL
+			AND p.status = $2
 		GROUP BY o.id
-		HAVING bool_or(p.status = $1)
-			AND bool_or(p.status = $2)
 		ORDER BY o.created_at
 	`
 
-	rows, err := c.db.Query(ctx, query, issuedToBuyer, returnedToSellers)
+	rows, err := c.db.Query(ctx, query, returnToHub, returnedToSellers)
 	if err != nil {
 		return nil, err
 	}
@@ -56,12 +62,12 @@ func (c *ConflictingPackageStatuses) ConflictingPackageStatusesRule(ctx context.
 	for rows.Next() {
 		var (
 			orderCode string
-			statuses  string
+			packages  string
 		)
 
 		if err := rows.Scan(
 			&orderCode,
-			&statuses,
+			&packages,
 		); err != nil {
 			return nil, err
 		}
@@ -69,8 +75,9 @@ func (c *ConflictingPackageStatuses) ConflictingPackageStatusesRule(ctx context.
 		resp.Items = append(resp.Items, models.Item{
 			OrderCode: orderCode,
 			Reason: fmt.Sprintf(
-				"qutilar statuslari: %s",
-				statuses,
+				"lifecycle_outcome=%s, lekin qaytarilgan quti allaqachon sotuvchida: %s",
+				returnToHub,
+				packages,
 			),
 		})
 	}

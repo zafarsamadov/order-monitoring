@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"context"
+	"fmt"
 	"math/rand/v2"
 	"time"
 )
@@ -33,4 +34,23 @@ func Backoff(attempt int, base, max time.Duration) time.Duration {
 	}
 	half := d / 2
 	return half + time.Duration(rand.Int64N(int64(half)+1))
+}
+
+// HumanDuration davomiylikni o'qiladigan ko'rinishda qaytaradi: "13 kun 2 soat", "2 soat 37 daq", "45 daq".
+func HumanDuration(d time.Duration) string {
+	if d < 0 {
+		d = -d
+	}
+	days := int(d.Hours()) / 24
+	hours := int(d.Hours()) % 24
+	mins := int(d.Minutes()) % 60
+
+	switch {
+	case days > 0:
+		return fmt.Sprintf("%d kun %d soat", days, hours)
+	case hours > 0:
+		return fmt.Sprintf("%d soat %d daq", hours, mins)
+	default:
+		return fmt.Sprintf("%d daq", mins)
+	}
 }

@@ -13,7 +13,7 @@ type DonaOptions struct {
 	MaxRetries    int
 }
 
-// SyncOptions — syncer sozlamalari.
+// SyncOptions — sync sozlamalari.
 type SyncOptions struct {
 	PageSize     int
 	RequestDelay time.Duration

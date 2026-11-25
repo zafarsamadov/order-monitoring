@@ -151,7 +151,7 @@ func makeOrders(n int) []map[string]any {
 	return out
 }
 
-func newTestSyncer(t *testing.T, f *fakeDona, store *postgres.Store) *syncService {
+func newTestSyncService(t *testing.T, f *fakeDona, store *postgres.Store) *syncService {
 	t.Helper()
 	srv := httptest.NewServer(f)
 	t.Cleanup(srv.Close)
@@ -172,7 +172,7 @@ func countRows(t *testing.T, store *postgres.Store, table string) int {
 func TestRepeatedSync(t *testing.T) {
 	store := newTestStore(t)
 	f := &fakeDona{orders: makeOrders(7), fail500: true}
-	s := newTestSyncer(t, f, store)
+	s := newTestSyncService(t, f, store)
 	ctx := context.Background()
 
 	// 1-sync: hammasi yangi. 7 order (3 sahifa) + 2 package + 1 handover + 2 javon + 1 tile.
@@ -245,7 +245,7 @@ func TestRepeatedSync(t *testing.T) {
 func TestSecondSyncWhileRunningIsRejected(t *testing.T) {
 	store := newTestStore(t)
 	f := &fakeDona{orders: makeOrders(1), block: make(chan struct{}), started: make(chan struct{})}
-	s := newTestSyncer(t, f, store)
+	s := newTestSyncService(t, f, store)
 	ctx := context.Background()
 
 	done := make(chan error)
@@ -270,7 +270,7 @@ func TestSecondSyncWhileRunningIsRejected(t *testing.T) {
 func TestSyncServerCapsLimit(t *testing.T) {
 	store := newTestStore(t)
 	f := &fakeDona{orders: makeOrders(7), maxLimit: 2}
-	s := newTestSyncer(t, f, store)
+	s := newTestSyncService(t, f, store)
 
 	run, err := s.Run(context.Background())
 	if err != nil {
@@ -292,7 +292,7 @@ func TestSyncServerCapsLimit(t *testing.T) {
 func TestSyncFailsMidwayThenResumes(t *testing.T) {
 	store := newTestStore(t)
 	f := &fakeDona{orders: makeOrders(7), failOffset: 3}
-	s := newTestSyncer(t, f, store)
+	s := newTestSyncService(t, f, store)
 	ctx := context.Background()
 
 	run, err := s.Run(ctx)

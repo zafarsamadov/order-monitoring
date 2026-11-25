@@ -214,7 +214,7 @@ func saveRun(ctx context.Context, db execer, run *models.SyncRun) error {
 }
 
 // upsertQuery shabloni. Jadval va ustun nomlari kod ichidagi konstantalardan keladi
-// (syncer/records.go), foydalanuvchi kiritgan matn emas; qiymatlar $n parametr bo'lib boradi.
+// (service/sync_records.go), foydalanuvchi kiritgan matn emas; qiymatlar $n parametr bo'lib boradi.
 //
 // xmax = 0 bo'lsa qator yangi qo'shilgan, aks holda yangilangan.
 // WHERE sharti hash teng bo'lsa UPDATE'ni o'tkazib yuboradi va hech qator qaytmaydi.

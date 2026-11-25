@@ -9,11 +9,12 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-// 2-qoida: xaridorga topshirilgan orderning hamma qutilari ham topshirilgan bo'ladi.
-// lifecycle_outcome = ISSUED_TO_BUYER bo'lsa, qutilarining statusi ham ISSUED_TO_BUYER bo'ladi.
+// 1-qoida: xaridorga topshirilgan orderning hamma qutilari ham topshirilgan bo'ladi.
+// Quti qaytarilsa (return_id), order lifecycle RETURN ga o'tadi — RETURNED_TO_WAREHOUSE orderlarda shunday.
+// Bu yerda esa order hali OUT / ISSUED_TO_BUYER, qaytgan quti esa omborda (location STAGING).
 const (
 	issuedOrderPackageReturnedRule        = "issued_order_package_returned"
-	issuedOrderPackageReturnedDescription = "Xaridorga topshirilgan orderning ba'zi qutilari topshirilmagan (masalan omborga qaytgan)"
+	issuedOrderPackageReturnedDescription = "Xaridorga topshirilgan orderning qutisi omborga qaytgan, lekin order hali 'topshirilgan' holatida"
 	issuedOrderPackageReturnedSeverity    = severityHigh
 )
 
@@ -38,8 +39,11 @@ func (i *IssuedOrderPackageReturned) IssuedOrderPackageReturnedRule(ctx context.
 	query := `
 		SELECT
 			COALESCE(o.order_code, o.group_no, o.id),
+			COALESCE(o.warehouse_status, ''),
+			COALESCE(o.location_kind, 'yo''q'),
 			string_agg(
-				COALESCE(p.package_no, p.id) || ' ' || COALESCE(p.status, 'NULL'),
+				COALESCE(p.package_no, p.id) || ' ' || COALESCE(p.status, 'NULL')
+					|| CASE WHEN p.return_id IS NOT NULL THEN ' (return)' ELSE '' END,
 				', ' ORDER BY p.package_no
 			)
 		FROM orders o
@@ -58,12 +62,16 @@ func (i *IssuedOrderPackageReturned) IssuedOrderPackageReturnedRule(ctx context.
 
 	for rows.Next() {
 		var (
-			orderCode string
-			packages  string
+			orderCode       string
+			warehouseStatus string
+			location        string
+			packages        string
 		)
 
 		if err := rows.Scan(
 			&orderCode,
+			&warehouseStatus,
+			&location,
 			&packages,
 		); err != nil {
 			return nil, err
@@ -72,9 +80,11 @@ func (i *IssuedOrderPackageReturned) IssuedOrderPackageReturnedRule(ctx context.
 		resp.Items = append(resp.Items, models.Item{
 			OrderCode: orderCode,
 			Reason: fmt.Sprintf(
-				"lifecycle_outcome=%s, topshirilmagan qutilar: %s",
+				"lifecycle_outcome=%s, lekin topshirilmagan qutilar: %s; order warehouse_status=%s, location=%s",
 				issuedToBuyer,
 				packages,
+				warehouseStatus,
+				location,
 			),
 		})
 	}

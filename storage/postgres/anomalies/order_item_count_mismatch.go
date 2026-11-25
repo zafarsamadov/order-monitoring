@@ -9,8 +9,9 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-// 11-qoida: order tovar soni qutilardagi tovarlar yig'indisiga teng.
+// 10-qoida: order tovar soni qutilardagi tovarlar yig'indisiga teng.
 // orders.item_count = SUM(packages.item_count).
+// item_count = 0 "noma'lum" degani (638 orderdan faqat 39 tasida to'ldirilgan), shuning uchun tekshirilmaydi.
 const (
 	orderItemCountMismatchRule        = "order_item_count_mismatch"
 	orderItemCountMismatchDescription = "Order tovar soni qutilardagi tovarlar yig'indisiga teng emas"
@@ -43,6 +44,7 @@ func (o *OrderItemCountMismatch) OrderItemCountMismatchRule(ctx context.Context)
 			COUNT(p.id)
 		FROM orders o
 		INNER JOIN packages p ON p.order_group_id = o.id
+		WHERE o.item_count > 0
 		GROUP BY o.id
 		HAVING o.item_count IS DISTINCT FROM SUM(p.item_count)
 		ORDER BY o.created_at

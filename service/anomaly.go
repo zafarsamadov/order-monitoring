@@ -16,15 +16,10 @@ func NewAnomalyService(repo storage.AnomaliesRepoI) *anomalyService {
 }
 
 // GetList rule va severity bo'yicha (ikkalasi ixtiyoriy) qoidalar natijasini yig'adi.
-// Yangi qoida qo'shilganda: repo'dan natijasini olib, xuddi shunday add(...) qilinadi.
+// Yangi qoida qo'shilganda: repo'dan natijasini olib, pastdagi ro'yxatga qo'shiladi.
 func (a *anomalyService) GetList(ctx context.Context, rule, severity string) (*models.RuleResponse, error) {
 	resp := &models.RuleResponse{
 		Items: []models.RuleItem{},
-	}
-
-	issuedOrderInWarehouse, err := a.repo.IssuedOrderInWarehouseRule(ctx)
-	if err != nil {
-		return nil, err
 	}
 
 	issuedOrderPackageReturned, err := a.repo.IssuedOrderPackageReturnedRule(ctx)
@@ -32,7 +27,7 @@ func (a *anomalyService) GetList(ctx context.Context, rule, severity string) (*m
 		return nil, err
 	}
 
-	conflictPackagesStatus, err := a.repo.ConflictingPackageStatusesRule(ctx)
+	conflictingPackageStatuses, err := a.repo.ConflictingPackageStatusesRule(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +47,17 @@ func (a *anomalyService) GetList(ctx context.Context, rule, severity string) (*m
 		return nil, err
 	}
 
-	handoverReceivedBeforeCreated, err := a.repo.HandoverReceivedBeforeCreatedRule(ctx)
+	handoverTimestampsOutOfOrder, err := a.repo.HandoverTimestampsOutOfOrderRule(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	activityBeforeLifecycleStart, err := a.repo.ActivityBeforeLifecycleStartRule(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	handoverStuckInTransit, err := a.repo.HandoverStuckInTransitRule(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -68,13 +73,14 @@ func (a *anomalyService) GetList(ctx context.Context, rule, severity string) (*m
 	}
 
 	for _, item := range []*models.RuleItem{
-		issuedOrderInWarehouse,
 		issuedOrderPackageReturned,
-		conflictPackagesStatus,
+		conflictingPackageStatuses,
 		returnedToSellerInWarehouse,
 		packageOnUnknownShelf,
 		dispatchedPackageOnShelf,
-		handoverReceivedBeforeCreated,
+		handoverTimestampsOutOfOrder,
+		activityBeforeLifecycleStart,
+		handoverStuckInTransit,
 		handoverReceivedIncomplete,
 		orderItemCountMismatch,
 	} {

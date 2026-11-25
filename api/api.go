@@ -31,9 +31,9 @@ func New(h *handler.Handler) *gin.Engine {
 	}
 
 	{
-		rules := router.Group("/anomalies")
+		anomalies := router.Group("/anomalies")
 
-		rules.GET("", h.Anomalies)
+		anomalies.GET("", h.Anomalies)
 	}
 	return router
 }

@@ -96,7 +96,7 @@ func (c *Config) PostgresURL() string {
 	return u.String()
 }
 
-// getOrReturnDefaultValue rider'dagidek, lekin bo'sh qiymatni ham "yo'q" deb hisoblaydi:
+// getOrReturnDefaultValue env qiymatini qaytaradi; bo'sh qiymat ham "yo'q" deb hisoblanadi:
 // .env.example nusxalanganda kalitlar bo'sh qoladi.
 func getOrReturnDefaultValue(key string, defaultValue interface{}) interface{} {
 	val, exists := os.LookupEnv(key)

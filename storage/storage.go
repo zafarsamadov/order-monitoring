@@ -32,13 +32,14 @@ type SyncRepoI interface {
 }
 
 type AnomaliesRepoI interface {
-	IssuedOrderInWarehouseRule(ctx context.Context) (*models.RuleItem, error)
 	IssuedOrderPackageReturnedRule(ctx context.Context) (*models.RuleItem, error)
 	ConflictingPackageStatusesRule(ctx context.Context) (*models.RuleItem, error)
 	ReturnedToSellerInWarehouseRule(ctx context.Context) (*models.RuleItem, error)
 	PackageOnUnknownShelfRule(ctx context.Context) (*models.RuleItem, error)
 	DispatchedPackageOnShelfRule(ctx context.Context) (*models.RuleItem, error)
-	HandoverReceivedBeforeCreatedRule(ctx context.Context) (*models.RuleItem, error)
+	HandoverTimestampsOutOfOrderRule(ctx context.Context) (*models.RuleItem, error)
+	ActivityBeforeLifecycleStartRule(ctx context.Context) (*models.RuleItem, error)
+	HandoverStuckInTransitRule(ctx context.Context) (*models.RuleItem, error)
 	HandoverReceivedIncompleteRule(ctx context.Context) (*models.RuleItem, error)
 	OrderItemCountMismatchRule(ctx context.Context) (*models.RuleItem, error)
 }
