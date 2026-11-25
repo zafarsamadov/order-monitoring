@@ -268,9 +268,9 @@ Har bir test o'z Postgres sxemasida ishlaydi va oxirida o'sha sxemani o'chiradi.
 | Stend klienti | 500 → retry; 429 → retry, keyin to'xtash; 4xx retry yo'q; 401 → qayta login; connection refused (host yashirin); `Retry-After`; buzilgan JSON; faqat GET + login yuboriladi; ochiq metodlar faqat `Login`/`Get` |
 | Sync | pagination + 500 dan keyin retry + takroriy sync dublikatsiz + o'zgargan yozuv yangilanadi; server limit'ni kesadi; o'rtada uzilish va davom etish; parallel sync rad etiladi |
 | Timeline | hodisalar tartibi, bo'sh vaqtlar, 404, handler javoblari, faqat shu orderning anomaliyalari |
+| Qoidalar (9 ta) | har qoida real Postgres'da: anomaliya qatorlari va normal qatorlar birga yoziladi, qoida **faqat** anomaliyalarni qaytarishi tekshiriladi (sabab matni bilan). Normal qatorlar ichida tahlilda topilgan yolg'on signallar bor: qisman qaytish, RETURN orderda STAGING, `item_count = 0`, 1 daqiqagacha farq, yo'ldagi handover kamomadi, ombordan chiqqan quti noma'lum javonda. Bo'sh bazada hamma qoida `[]` qaytaradi |
 | Anomaliyalar API va hisobot | noyob orderlar soni, 3 ta turli misol, noma'lum rule/severity → 400, mavjud rule + boshqa severity → bo'sh, `/report.csv` qatorlari |
 
-> TODO: qoidalar testlari.
 
 ---
 
