@@ -9,17 +9,19 @@ type Repo struct {
 	*IssuedOrderPackageReturned
 	*ConflictingPackageStatuses
 	*ReturnedToSellerInWarehouse
-	*PackageOnUnknownShelfRepo
+	*PackageOnUnknownShelf
 	*DispatchedPackageOnShelf
+	*HandoverReceivedBeforeCreated
 }
 
 func NewRepo(db *pgxpool.Pool) *Repo {
 	return &Repo{
-		IssuedOrderInWarehouse:      NewIssuedOrderInWarehouseRepo(db),
-		IssuedOrderPackageReturned:  NewIssuedOrderPackageReturnedRepo(db),
-		ConflictingPackageStatuses:  NewConflictingPackageStatusesRepo(db),
-		ReturnedToSellerInWarehouse: NewReturnedToSellerInWarehouseRepo(db),
-		PackageOnUnknownShelfRepo:   NewPackageOnUnknownShelfRepo(db),
-		DispatchedPackageOnShelf:    NewDispatchedPackageOnShelfRepo(db),
+		IssuedOrderInWarehouse:        NewIssuedOrderInWarehouseRepo(db),
+		IssuedOrderPackageReturned:    NewIssuedOrderPackageReturnedRepo(db),
+		ConflictingPackageStatuses:    NewConflictingPackageStatusesRepo(db),
+		ReturnedToSellerInWarehouse:   NewReturnedToSellerInWarehouseRepo(db),
+		PackageOnUnknownShelf:         NewPackageOnUnknownShelfRepo(db),
+		DispatchedPackageOnShelf:      NewDispatchedPackageOnShelfRepo(db),
+		HandoverReceivedBeforeCreated: NewHandoverReceivedBeforeCreatedRepo(db),
 	}
 }

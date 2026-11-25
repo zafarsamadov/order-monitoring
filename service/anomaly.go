@@ -52,6 +52,11 @@ func (a *anomalyService) GetList(ctx context.Context, rule, severity string) (*m
 		return nil, err
 	}
 
+	handoverReceivedBeforeCreated, err := a.repo.HandoverReceivedBeforeCreatedRule(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	for _, item := range []*models.RuleItem{
 		issuedOrderInWarehouse,
 		issuedOrderPackageReturned,
@@ -59,6 +64,7 @@ func (a *anomalyService) GetList(ctx context.Context, rule, severity string) (*m
 		returnedToSellerInWarehouse,
 		packageOnUnknownShelf,
 		dispatchedPackageOnShelf,
+		handoverReceivedBeforeCreated,
 	} {
 		if rule != "" && item.Rule != rule {
 			continue

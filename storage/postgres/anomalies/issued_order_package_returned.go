@@ -14,7 +14,7 @@ import (
 const (
 	issuedOrderPackageReturnedRule        = "issued_order_package_returned"
 	issuedOrderPackageReturnedDescription = "Xaridorga topshirilgan orderning ba'zi qutilari topshirilmagan (masalan omborga qaytgan)"
-	issuedOrderPackageReturnedSeverity    = "high"
+	issuedOrderPackageReturnedSeverity    = severityHigh
 )
 
 type IssuedOrderPackageReturned struct {
@@ -50,7 +50,7 @@ func (i *IssuedOrderPackageReturned) IssuedOrderPackageReturnedRule(ctx context.
 		ORDER BY o.created_at
 	`
 
-	rows, err := i.db.Query(ctx, query, issuedOutcome)
+	rows, err := i.db.Query(ctx, query, issuedToBuyer)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func (i *IssuedOrderPackageReturned) IssuedOrderPackageReturnedRule(ctx context.
 			OrderCode: orderCode,
 			Reason: fmt.Sprintf(
 				"lifecycle_outcome=%s, topshirilmagan qutilar: %s",
-				issuedOutcome,
+				issuedToBuyer,
 				packages,
 			),
 		})

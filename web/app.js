@@ -176,8 +176,6 @@
   // Sync qismidan mustaqil. GET /anomalies bir marta chaqiriladi; checkbox va severity
   // filtri natijani qayta so'ramasdan, sahifaning o'zida ko'rsatadi/yashiradi.
 
-  const EXAMPLES_PER_RULE = 3;
-
   const anomalyBtn = $("anomaly-btn");
   const anomalyLabel = anomalyBtn.querySelector(".btn__label");
   const anomalyAlert = $("anomaly-alert");
@@ -243,16 +241,26 @@
       desc.className = "rule-card__desc";
       desc.textContent = item.description;
 
-      const list = document.createElement("ul");
-      for (const ex of (item.items || []).slice(0, EXAMPLES_PER_RULE)) {
-        const li = document.createElement("li");
-        const code = document.createElement("code");
-        code.textContent = ex.order_code;
-        li.append(code, document.createTextNode(` — ${ex.reason}`));
-        list.append(li);
-      }
+      // Hamma buyurtmalar jadvalda; 10 tadan oshsa jadval ichida scroll chiqadi.
+      const wrap = document.createElement("div");
+      wrap.className = "rule-table";
+      const table = document.createElement("table");
+      const thead = document.createElement("thead");
+      thead.innerHTML = "<tr><th>#</th><th>Buyurtma</th><th>Sabab</th></tr>";
+      const tbody = document.createElement("tbody");
+      (item.items || []).forEach((ex, i) => {
+        const tr = document.createElement("tr");
+        for (const text of [i + 1, ex.order_code, ex.reason]) {
+          const td = document.createElement("td");
+          td.textContent = text;
+          tr.append(td);
+        }
+        tbody.append(tr);
+      });
+      table.append(thead, tbody);
+      wrap.append(table);
 
-      card.append(head, desc, list);
+      card.append(head, desc, wrap);
       return card;
     }));
   }

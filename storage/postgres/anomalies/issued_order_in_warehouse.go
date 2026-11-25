@@ -15,10 +15,7 @@ import (
 const (
 	issuedOrderInWarehouseRule        = "issued_order_in_warehouse"
 	issuedOrderInWarehouseDescription = "Xaridorga topshirilgan order hali jo'natishga tayyor holatda yoki omborda turibdi"
-	issuedOrderInWarehouseSeverity    = "high"
-
-	issuedOutcome     = "ISSUED_TO_BUYER"
-	readyToShipStatus = "READY_TO_SHIP"
+	issuedOrderInWarehouseSeverity    = severityHigh
 )
 
 type IssuedOrderInWarehouse struct {
@@ -51,7 +48,7 @@ func (i *IssuedOrderInWarehouse) IssuedOrderInWarehouseRule(ctx context.Context)
 		ORDER BY created_at
 	`
 
-	rows, err := i.db.Query(ctx, query, issuedOutcome, readyToShipStatus)
+	rows, err := i.db.Query(ctx, query, issuedToBuyer, readyToShip)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +80,7 @@ func (i *IssuedOrderInWarehouse) IssuedOrderInWarehouseRule(ctx context.Context)
 			OrderCode: orderCode,
 			Reason: fmt.Sprintf(
 				"lifecycle_outcome=%s, warehouse_status=%s, location=%s",
-				issuedOutcome,
+				issuedToBuyer,
 				warehouseStatus,
 				location,
 			),

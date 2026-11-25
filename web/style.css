@@ -179,9 +179,12 @@ tbody tr:last-child td { border-bottom: 0; }
 .rule-card__name { font-weight: 600; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 14px; }
 .rule-card__count { margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; }
 .rule-card__desc { margin-top: 6px; font-size: 14px; color: var(--muted); }
-.rule-card ul { margin: 10px 0 0; padding-left: 18px; font-size: 13px; }
-.rule-card li { margin-bottom: 4px; word-break: break-word; }
-.rule-card code { font-weight: 600; }
+.rule-table { margin-top: 10px; max-height: 410px; overflow: auto; border: 1px solid var(--border); border-radius: 8px; }
+.rule-table table { font-size: 13px; }
+.rule-table th { position: sticky; top: 0; background: var(--surface); z-index: 1; }
+.rule-table td { white-space: normal; word-break: break-word; vertical-align: top; }
+.rule-table td:first-child { color: var(--muted); width: 1%; text-align: right; }
+.rule-table td:nth-child(2) { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 600; white-space: nowrap; }
 .sev { padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; }
 .sev--high { color: var(--red); background: var(--red-bg); }
 .sev--medium { color: var(--yellow); background: var(--yellow-bg); }

@@ -3,13 +3,18 @@ package anomalies
 import (
 	"context"
 	"fmt"
+
 	"order-monitoring/models"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
+// 6-qoida: jo'natilgan quti javonda qolmaydi.
+// packages.status = DISPATCHED bo'lsa, shelf_code bo'sh bo'ladi.
 const (
-	dispatchedOutcome = "DISPATCHED"
+	dispatchedPackageOnShelfRule        = "dispatched_package_on_shelf"
+	dispatchedPackageOnShelfDescription = "Jo'natilgan quti hali javonda turibdi"
+	dispatchedPackageOnShelfSeverity    = severityMedium
 )
 
 type DispatchedPackageOnShelf struct {
@@ -23,11 +28,10 @@ func NewDispatchedPackageOnShelfRepo(db *pgxpool.Pool) *DispatchedPackageOnShelf
 }
 
 func (d *DispatchedPackageOnShelf) DispatchedPackageOnShelfRule(ctx context.Context) (*models.RuleItem, error) {
-
 	resp := &models.RuleItem{
-		Rule:        "dispatched_package_on_shelf",
-		Description: "Qutilar javonlarda joylashgan bo'lsa ham, ularni xaridorga topshirish uchun yetkazib beruvchi tomonidan olib ketilmagan",
-		Severity:    "medium",
+		Rule:        dispatchedPackageOnShelfRule,
+		Description: dispatchedPackageOnShelfDescription,
+		Severity:    dispatchedPackageOnShelfSeverity,
 		Items:       []models.Item{},
 	}
 
@@ -35,7 +39,7 @@ func (d *DispatchedPackageOnShelf) DispatchedPackageOnShelfRule(ctx context.Cont
 		SELECT
 			COALESCE(o.order_code, o.group_no, o.id),
 			string_agg(
-				COALESCE(p.package_no, p.id) || ' ' || COALESCE(p.shelf_code, 'NULL'),
+				COALESCE(p.package_no, p.id) || ' ' || p.shelf_code,
 				', ' ORDER BY p.package_no
 			)
 		FROM orders o
@@ -46,7 +50,7 @@ func (d *DispatchedPackageOnShelf) DispatchedPackageOnShelfRule(ctx context.Cont
 		ORDER BY o.created_at
 	`
 
-	rows, err := d.db.Query(ctx, query, dispatchedOutcome)
+	rows, err := d.db.Query(ctx, query, dispatched)
 	if err != nil {
 		return nil, err
 	}
@@ -68,8 +72,8 @@ func (d *DispatchedPackageOnShelf) DispatchedPackageOnShelfRule(ctx context.Cont
 		resp.Items = append(resp.Items, models.Item{
 			OrderCode: orderCode,
 			Reason: fmt.Sprintf(
-				"lifecycle_outcome=%s, javonlardagi qutilar: %s",
-				dispatchedOutcome,
+				"status=%s, javonda qolgan qutilar: %s",
+				dispatched,
 				packages,
 			),
 		})
