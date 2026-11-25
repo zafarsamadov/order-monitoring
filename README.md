@@ -227,13 +227,42 @@ qaytish yo'lidagi orderlarda (`RETURN_TO_HUB`) — jarayonning oraliq holati.
 
 ### 3. G'alati, lekin normal
 
-**Bitta javonda bir nechta orderning qutilari**
-*Nega g'alati ko'rinadi:* "bir javon — bir order" deb kutish mumkin.
-*Nega normal:* javon — saralash joyi, order uchun ajratilgan joy emas. Har bir quti o'z `shelf_code` iga ega, va
-javonning `box_count` i shu qutilar soniga teng bo'lsa, ma'lumot to'g'ri.
-Real ma'lumotda: javon 0 — 3 ta orderdan 3 quti, javon 1 — 3 ta orderdan 3 quti, RET-01 — 6 ta orderdan 6 quti.
+Bular xatoga o'xshaydi, lekin biznes jarayoni yoki stend ma'lumotining shakli bilan tushuntiriladi. Qoida qilinmadi;
+ba'zilari qoidalar testlarida "normal" qator sifatida turibdi — qoida ularni xato deb chiqarmasligi tekshiriladi.
 
-> TODO: qolgan normal holatlar.
+**Javonlar va qutilar**
+
+| Holat | Soni | Nega normal |
+|---|---|---|
+| Bitta javonda bir nechta orderning qutilari | javon 0: 3, javon 1: 3, RET-01: 6 order | Javon — saralash joyi, orderga ajratilmagan. Javonning `box_count` i qutilar soniga teng — ma'lumot to'g'ri |
+| Omborga qaytgan quti (`RETURNED_TO_WAREHOUSE`) RET-01 javonida | 6 | Qaytarishlar javoni aynan shu uchun. RET-01 `box_count = 6` — hammasi sanalgan |
+| Xaridorga topshirilgan yoki sotuvchiga qaytarilgan quti javonsiz | 52 + 104 | Quti ombordan chiqib ketgan — javonda bo'lmasligi kerak |
+| Bitta orderda 2–3 ta quti | 52 order (masalan GRP-428899 — 3 ta) | Order bir nechta qutiga bo'lib qadoqlanadi |
+| Order `AWAITING` / `ACCEPTED`, lekin qutisi yo'q | 63 + 5 | Tovar hali omborga kelmagan yoki qadoqlanmagan; quti qadoqlashda yaratiladi (masalan DD1794401226LS) |
+| Maxsus javonlarda (RET-01, RTY-01, …) `tiles` bo'sh, lekin `box_count > 0` | RET-01: 6 | `/shelves` faqat saralash javonlarining qutilarini beradi; maxsus javonlardagilar `/packages` da `shelf_code` bilan ko'rinadi |
+
+**Qaytish jarayoni**
+
+| Holat | Soni | Nega normal |
+|---|---|---|
+| Bitta orderda ham `ISSUED_TO_BUYER`, ham `RETURNED_TO_SELLERS` quti | — | Qisman qaytish: xaridor bitta qutini oldi, ikkinchisini qaytardi. Holatning o'zi xato emas (bazadagi shunday 26 ta order `conflicting_package_statuses` ga boshqa sabab bilan tushadi: kuryer hali olib kelyapti, quti esa allaqachon sotuvchida) |
+| RETURN orderlarda `location = STAGING` | 531 dan 530 | Stend modeli: joylashuv qaytish bosqichi bilan bir vaqtda yoziladi (`location_since = lifecycle_since`). Barcha qaytishlarda bir xil — tizimli, xato emas |
+| `RETURN_TO_HUB` + `READY_TO_SHIP` ("Courier bringing a return") | 27 | Qaytish yo'lda: tovar hali hub'ga kelmagan |
+
+**Handover'lar**
+
+| Holat | Soni | Nega normal |
+|---|---|---|
+| Yo'ldagi (`IN_TRANSIT`) handover'da `item_count < expected_qty` | 2 (HND-2601-T 2/4, HND-2603-T 2/3) | Tovar qism-qism yuborilmoqda; kamomad faqat qabul qilingandan (`RECEIVED`) keyin xato |
+| Orderda handover yo'q | 599 order | `/inbound/handovers` jami 39 ta yozuv qaytaradi — oxirgi davr. Handover'ning yo'qligi xato emas |
+
+**Vaqtlar, to'lov va bo'sh maydonlar**
+
+| Holat | Soni | Nega normal |
+|---|---|---|
+| `last_activity_at` `lifecycle_since` dan 1 daqiqagacha oldin | 527 order | Bitta jarayonda ikki maydon ketma-ket yoziladi — soniyaning bir qismiga teng farq. Shuning uchun `activity_before_lifecycle_start` da 1 daqiqa tolerans |
+| `payment_status = unpaid`, lekin `READY_TO_SHIP` | 8 (masalan BO1794401263UW) | Naqd to'lov (COD): xaridor tovarni olganda to'laydi |
+| `item_count = 0`, `order_code` va `payment_status` bo'sh | 638 dan 599 | Stend bu maydonlarni ko'p orderlarda to'ldirmaydi: 0 / bo'sh = "noma'lum", "nol" emas. Order kodi o'rniga `group_no` ishlatiladi; `order_item_count_mismatch` faqat `item_count > 0` ni tekshiradi |
 
 ---
 
