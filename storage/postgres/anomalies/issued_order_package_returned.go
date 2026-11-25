@@ -27,7 +27,7 @@ func NewIssuedOrderPackageReturnedRepo(db *pgxpool.Pool) *IssuedOrderPackageRetu
 	}
 }
 
-func (r *IssuedOrderPackageReturned) IssuedOrderPackageReturnedRule(ctx context.Context) (*models.RuleItem, error) {
+func (i *IssuedOrderPackageReturned) IssuedOrderPackageReturnedRule(ctx context.Context) (*models.RuleItem, error) {
 	resp := &models.RuleItem{
 		Rule:        issuedOrderPackageReturnedRule,
 		Description: issuedOrderPackageReturnedDescription,
@@ -50,7 +50,7 @@ func (r *IssuedOrderPackageReturned) IssuedOrderPackageReturnedRule(ctx context.
 		ORDER BY o.created_at
 	`
 
-	rows, err := r.db.Query(ctx, query, issuedOutcome)
+	rows, err := i.db.Query(ctx, query, issuedOutcome)
 	if err != nil {
 		return nil, err
 	}

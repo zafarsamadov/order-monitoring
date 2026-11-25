@@ -47,12 +47,18 @@ func (a *anomalyService) GetList(ctx context.Context, rule, severity string) (*m
 		return nil, err
 	}
 
+	dispatchedPackageOnShelf, err := a.repo.DispatchedPackageOnShelfRule(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	for _, item := range []*models.RuleItem{
 		issuedOrderInWarehouse,
 		issuedOrderPackageReturned,
 		conflictPackagesStatus,
 		returnedToSellerInWarehouse,
 		packageOnUnknownShelf,
+		dispatchedPackageOnShelf,
 	} {
 		if rule != "" && item.Rule != rule {
 			continue

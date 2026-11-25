@@ -18,7 +18,7 @@ func NewConflictingPackageStatusesRepo(db *pgxpool.Pool) *ConflictingPackageStat
 	}
 }
 
-func (r *ConflictingPackageStatuses) ConflictingPackageStatusesRule(ctx context.Context) (*models.RuleItem, error) {
+func (c *ConflictingPackageStatuses) ConflictingPackageStatusesRule(ctx context.Context) (*models.RuleItem, error) {
 	resp := &models.RuleItem{
 		Rule:        "conflicting_package_statuses",
 		Description: "Xaridorga topshirilgan orderning ba'zi qutilari topshirilmagan (masalan omborga qaytgan)",
@@ -41,7 +41,7 @@ func (r *ConflictingPackageStatuses) ConflictingPackageStatusesRule(ctx context.
 		ORDER BY o.created_at
 	`
 
-	rows, err := r.db.Query(ctx, query, issuedOutcome)
+	rows, err := c.db.Query(ctx, query, issuedOutcome)
 	if err != nil {
 		return nil, err
 	}

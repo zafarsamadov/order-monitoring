@@ -10,6 +10,7 @@ type Repo struct {
 	*ConflictingPackageStatuses
 	*ReturnedToSellerInWarehouse
 	*PackageOnUnknownShelfRepo
+	*DispatchedPackageOnShelf
 }
 
 func NewRepo(db *pgxpool.Pool) *Repo {
@@ -19,5 +20,6 @@ func NewRepo(db *pgxpool.Pool) *Repo {
 		ConflictingPackageStatuses:  NewConflictingPackageStatusesRepo(db),
 		ReturnedToSellerInWarehouse: NewReturnedToSellerInWarehouseRepo(db),
 		PackageOnUnknownShelfRepo:   NewPackageOnUnknownShelfRepo(db),
+		DispatchedPackageOnShelf:    NewDispatchedPackageOnShelfRepo(db),
 	}
 }
