@@ -33,4 +33,7 @@ type SyncRepoI interface {
 
 type AnomaliesRepoI interface {
 	IssuedOrderInWarehouseRule(ctx context.Context) (*models.RuleItem, error)
+	IssuedOrderPackageReturnedRule(ctx context.Context) (*models.RuleItem, error)
+	ConflictingPackageStatusesRule(ctx context.Context) (*models.RuleItem, error)
+	ReturnedToSellerInWarehouseRule(ctx context.Context) (*models.RuleItem, error)
 }

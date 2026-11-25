@@ -27,8 +27,26 @@ func (a *anomalyService) GetList(ctx context.Context, rule, severity string) (*m
 		return nil, err
 	}
 
+	issuedOrderPackageReturned, err := a.repo.IssuedOrderPackageReturnedRule(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	conflictPackagesStatus, err := a.repo.ConflictingPackageStatusesRule(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	returnedToSellerInWarehouse, err := a.repo.ReturnedToSellerInWarehouseRule(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	for _, item := range []*models.RuleItem{
 		issuedOrderInWarehouse,
+		issuedOrderPackageReturned,
+		conflictPackagesStatus,
+		returnedToSellerInWarehouse,
 	} {
 		if rule != "" && item.Rule != rule {
 			continue

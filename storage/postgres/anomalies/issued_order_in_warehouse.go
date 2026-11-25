@@ -1,4 +1,4 @@
-package rules
+package anomalies
 
 import (
 	"context"
@@ -32,7 +32,7 @@ func NewIssuedOrderInWarehouseRepo(db *pgxpool.Pool) *IssuedOrderInWarehouse {
 }
 
 func (i *IssuedOrderInWarehouse) IssuedOrderInWarehouseRule(ctx context.Context) (*models.RuleItem, error) {
-	result := &models.RuleItem{
+	resp := &models.RuleItem{
 		Rule:        issuedOrderInWarehouseRule,
 		Description: issuedOrderInWarehouseDescription,
 		Severity:    issuedOrderInWarehouseSeverity,
@@ -79,7 +79,7 @@ func (i *IssuedOrderInWarehouse) IssuedOrderInWarehouseRule(ctx context.Context)
 			location = locationKind + " " + locationLabel
 		}
 
-		result.Items = append(result.Items, models.Item{
+		resp.Items = append(resp.Items, models.Item{
 			OrderCode: orderCode,
 			Reason: fmt.Sprintf(
 				"lifecycle_outcome=%s, warehouse_status=%s, location=%s",
@@ -94,7 +94,7 @@ func (i *IssuedOrderInWarehouse) IssuedOrderInWarehouseRule(ctx context.Context)
 		return nil, err
 	}
 
-	result.Total = len(result.Items)
+	resp.Total = len(resp.Items)
 
-	return result, nil
+	return resp, nil
 }

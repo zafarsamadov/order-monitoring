@@ -36,7 +36,7 @@ func NewPostgres(ctx context.Context, databaseURL string) (*Store, error) {
 		db:        pool,
 		sync:      NewSyncRepo(pool),
 		order:     NewOrderRepo(pool),
-		anomalies: rules.NewIssuedOrderInWarehouseRepo(pool),
+		anomalies: rules.NewRepo(pool),
 	}, nil
 }
 
